@@ -1,31 +1,66 @@
 # Genting Poker Manager
 
-Prima versiune a aplicației de administrare a turneelor de poker, cu interfață în limba română.
+A responsive, browser-local workspace for importing Cardroom Magic Excel reports and preparing an accurate internal Day 2 leaderboard. Black, red and white UI; no external runtime services or API integrations.
 
-## Pornire
+## Run
 
-Necesită Node.js 22 sau mai nou. Nu sunt necesare pachete externe sau chei API.
+Install Node.js 22 or later. All runtime dependencies are vendored; no `npm install` is required.
 
 ```sh
 npm start
 ```
 
-Deschide `http://localhost:3000` în browser. `PORT` și `HOST` pot configura serverul; implicit ascultă doar pe `127.0.0.1`. Pentru acces printr-un mediu găzduit, configurează `HOST=0.0.0.0` și port forwarding-ul mediului.
+Open http://localhost:3000. `HOST` defaults to `127.0.0.1`; `PORT` defaults to `3000`. Use a current browser with IndexedDB and Web Crypto. Serve over localhost or HTTPS; opening the HTML directly is unsupported.
+
+## Test
 
 ```sh
 npm test
 ```
 
-## Flux de lucru
+The suite covers real BIFF8 `.xls` and OOXML `.xlsx` parsing, zero-padded IDs, strict chip counts, mapping, qualification separation, duplicate IDs, cross-source conflicts, verified nationality, publication permission, provenance, explicit exclusion, ranking ties, formula-safe CSV and existing tournament model behavior.
 
-1. Creează un turneu cu nume și dată.
-2. Adaugă flight-uri (de exemplu Ziua 1A, Ziua 1B).
-3. Adaugă jucători cu nume, cod de țară din două litere, flight și stack pentru Ziua 2.
-4. Editează stackurile, caută jucători și filtrează după flight.
-5. Exportă clasamentul complet în CSV. Clasamentul este descrescător, cu locuri comune pentru stackuri egale.
+```sh
+node tests/generate-samples.cjs
+```
 
-Datele se salvează automat în localStorage, separat pentru fiecare turneu. Sunt păstrate la reîncărcare în același browser și aceeași origine. Stackul zero este permis; media include toți jucătorii înregistrați. Fiecare rând reprezintă o înscriere; identitatea jucătorilor între flight-uri nu este deduplicată automat.
+Regenerates four synthetic sample workbooks in `public/samples/`. Use **Explore sample tournament** to load them into a new tournament without replacing existing records. The sample deliberately includes a duplicate qualifier with conflicting chips/name, a missing name, an invalid stack and unknown permissions. Entry S010 has a large chip value to demonstrate that an entry never becomes a qualifier.
 
-## Limitele primei versiuni
+## Workflow
 
-Fără autentificare, sincronizare între calculatoare sau bază de date pe server. Datele nu sunt transmise serverului. Ștergerea datelor browserului le elimină; exportul CSV permite păstrarea clasamentului, dar importul nu este implementat. Evită utilizarea simultană în mai multe file; aplicația blochează salvarea când detectează modificări într-o altă filă. Nu folosi această versiune ca singura evidență a unui turneu real.
+1. Create a tournament; add flights such as 1A, 1B and 1C.
+2. Choose a flight and explicitly choose **Entries**, **Re-Entries** or **Qualified Players** before uploading. Sheet names and chip values never determine qualification.
+3. Select the worksheet and header row. Confirm the suggested column mapping. ID and name columns are required; qualified uploads also require a chip column. A missing value in an individual row is retained and flagged. Ambiguous headers require manual selection.
+4. Import the selected worksheet. All other sheets and original bytes remain archived; import additional sheets separately with their proper category.
+5. Review the table sorted by chips descending. Search by name or ID, filter by flight or show only blocking issues. Use **Review** to edit fields and record a reason. Excluding an erroneous/duplicate record requires a reason and keeps it in **Excluded records**. There is no player deletion or automatic merge.
+6. Resolve blocking issues on every active qualified row before exporting the **internal** CSV. Equal chip counts share ranks. Export ignores view filters and includes all active qualified records, permission status and verified nationality only. It is an internal operations file, not permission to publish names.
+7. Use **Review source**, **Download original** and **Download backup** for review and retention. Backups include all extracted rows, correction history, mappings and original workbook bytes in Base64. JSON backup restoration is not implemented in this version; originals can be downloaded separately and re-imported.
+
+## Validation rules
+
+- Missing IDs/names, nonpositive or invalid qualified chips, unknown flights and a flight that conflicts with the upload assignment block export.
+- Chips accept positive safe whole numbers, with optional consistently grouped comma/space thousands separators. Ambiguous decimal notation, negatives, zero, exponents and unsafe integers require review.
+- IDs are compared case-insensitively after trimming; leading zeros are retained as displayed by Excel. Already-rounded numeric IDs cannot be reconstructed. Names and raw data are never guessed.
+- Duplicate qualified IDs block export even when their stacks match. Matching IDs in Entries/Re-Entries are visibly flagged as cross-source matches without treating legitimate entry history as additional qualifiers.
+- Conflicting nonempty names, explicit publication permissions or verified nationalities for the same ID block the affected qualifier. Conflicting qualified stacks are flagged separately. Review source evidence and correct or explicitly exclude the relevant record.
+- Nationality is not inferred from a name, language or ID. It appears in the leaderboard only when the mapped verification field explicitly says yes/true/1/allowed/granted/y, or an operator checks the verification box with a correction reason. Raw unverified nationality remains available in the validation table and original workbook.
+- Permission is `yes`, `no` or `unknown`; blank/unrecognized text remains unknown. No missing permission is interpreted as consent.
+- Every nonblank row after the chosen header is retained, including totals/footers, which can be explicitly excluded. Physical blank rows, all worksheets and formula expressions remain in the retained source. Formulas are not recalculated: review cached values and recalculate in Excel if necessary.
+
+## Storage and limits
+
+Original files and workspace data are stored together in IndexedDB in this browser and origin. Writes are atomic; revision checks reject stale writes from another tab. There is no server database, sign-in, synchronization or network upload of player records. Browser data clearing removes local records. Keep downloaded originals/backups separately. Earlier manual-entry `localStorage` data is preserved and never silently converted to qualified records; a notice identifies it when present.
+
+Imports accept actual OLE `.xls` (BIFF8) and ZIP `.xlsx` workbooks, up to 15 MB, 50,000 worksheet rows and 256 columns. Renamed CSV/HTML, encrypted workbooks and other formats are unsupported. Column mapping accommodates report variations, but no real Cardroom Magic workbook was supplied for acceptance testing. Verify a representative export before operational use.
+
+The Node server serves an explicit allowlist with a restrictive content security policy. The browser Excel parser is SheetJS CE 0.20.3, vendored from its official distribution; see `public/vendor/LICENSE.sheetjs` and `THIRD_PARTY.md`. No CDN dependency is loaded at runtime.
+
+JPEG generation, seating, payouts, live tracking and external API integrations are intentionally outside this version.
+
+## Static build
+
+```sh
+node build.mjs
+```
+
+Copies `public/` into `dist/` for static HTTPS hosting. The local server continues to serve `public/`. `.openai/hosting.json` records the private preview Site identity; no tournament data is committed or deployed.
