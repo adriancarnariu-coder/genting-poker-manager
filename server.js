@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 const files = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/model.js': ['model.js', 'text/javascript'], '/importer.js': ['importer.js', 'text/javascript'], '/store.js': ['store.js','text/javascript'], '/style.css': ['style.css', 'text/css'], '/vendor/xlsx.full.min.cjs':['vendor/xlsx.full.min.cjs','text/javascript'] };
 for (const name of ['qualified-1a.xlsx','qualified-1b.xlsx','entries-1a.xls','reentries-1a.xlsx']) files['/samples/'+name]=['samples/'+name,'application/octet-stream'];
+for (const name of ['upload.js','excel-worker.js']) files['/'+name]=[name,'text/javascript'];
 const server = createServer(async (req, res) => {
   const file = files[new URL(req.url, 'http://localhost').pathname];
   if (!file || !['GET', 'HEAD'].includes(req.method)) { res.writeHead(404); return res.end('Not found'); }

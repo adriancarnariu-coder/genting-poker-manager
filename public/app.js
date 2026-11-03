@@ -1,11 +1,13 @@
 import {FIELDS,TYPES,text,readWorkbook,suggestHeader,suggestMapping,importRows,issuesFor,chipNumber,sortedRows,leaderboardCsv,editRow} from './importer.js';
 import {openStore,load,save} from './store.js';
+import {prepareUpload} from './upload.js';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)], fmt=n=>new Intl.NumberFormat('en-GB').format(n);
 let db,state={revision:0,events:[],active:null},category='Qualified Players',pending=null,editing=null,busy=false;
 const current=()=>state.events.find(e=>e.id===state.active);
 const el=(tag,value,cls)=>{const node=document.createElement(tag);if(value!==undefined)node.textContent=value;if(cls)node.className=cls;return node;};
 const opt=(value,label=value)=>new Option(label,value);
 function notice(message){$('#notice').textContent=message;}
+function uploadStatus(message){$('#upload-status').textContent=message;}
 function download(data,name,type='application/octet-stream'){
   const url=URL.createObjectURL(new Blob([data],{type})),a=el('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
@@ -87,16 +89,23 @@ function renderArchive(){
 }
 $('#upload').onchange=async e=>{
   const file=e.target.files[0];e.target.value='';if(!file)return;
+  const event=current(),context={eventId:event?.id,flight:$('#upload-flight').value,type:$('#upload-type').value};
+  pending=null;
+  showDialog('upload-dialog');$('#upload-result-title').textContent='Opening workbook';$('#upload-result-message').textContent=`Reading ${file.name}…`;
+  $('#upload-result-close').hidden=true;$('#upload').disabled=true;
   try{
-    if(!current()?.flights.length)throw Error('Add a flight first.');
-    if(file.size>15*1024*1024)throw Error('Workbook exceeds the 15 MB limit.');
-    if(!window.XLSX)throw Error('The Excel parser failed to load. Reload the application.');
-    const bytes=await file.arrayBuffer(),sheets=readWorkbook(window.XLSX,bytes,file.name);
-    const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');
-    pending={eventId:current().id,filename:file.name,bytes,sheets,hash,type:$('#upload-type').value,flight:$('#upload-flight').value};
-    showDialog('import-dialog');$('#sheet').replaceChildren(...sheets.map((s,i)=>opt(i,s.name)));selectSheet();
-  }catch(error){notice(error.message);}
+    pending=await prepareUpload(file,context,{progress:message=>{uploadStatus(message);$('#upload-result-message').textContent=message;}});
+    if(current()?.id!==context.eventId)throw Error('The tournament changed while reading. Choose the file again.');
+    $('#upload-dialog').close();showDialog('import-dialog');$('#sheet').replaceChildren(...pending.sheets.map((s,i)=>opt(i,s.name)));selectSheet();
+    uploadStatus(`${file.name} opened. Confirm the columns, then click Import mapped rows to add the players.`);
+  }catch(error){
+    pending=null;$('#import-dialog').close();if(!$('#upload-dialog').open)showDialog('upload-dialog');
+    $('#upload-result-title').textContent='Workbook could not be opened';$('#upload-result-message').textContent=error.message;
+    $('#upload-result-close').hidden=false;uploadStatus(`${file.name}: ${error.message}`);
+  }finally{$('#upload').disabled=!current()?.flights.length;}
 };
+$('#upload-dialog').addEventListener('cancel',e=>{if($('#upload-result-close').hidden)e.preventDefault();});
+$('#import-dialog').addEventListener('close',()=>{if(pending){uploadStatus(`${pending.filename} was opened but has not been imported. Choose it again to continue.`);pending=null;}});
 function selectSheet(){const sheet=pending.sheets[Number($('#sheet').value)];$('#header-row').value=suggestHeader(sheet.rows)+1;$('#header-row').max=sheet.rows.length||1;renderMapping();}
 $('#sheet').onchange=selectSheet;$('#header-row').oninput=renderMapping;
 function renderMapping(){
@@ -116,7 +125,10 @@ $('#import-form').onsubmit=e=>formAction(e,async()=>{
   const rows=importRows({rows:sheet.rows,headerIndex,mapping,type:pending.type,flight:pending.flight,uploadId:id,sheetName:sheet.name});
   if(!rows.length)throw Error('No data rows were found after the selected header.');
   const upload={...pending,id,sheetName:sheet.name,headerIndex,mapping,rowCount:rows.length,at:new Date().toISOString()};
-  await update({...current(),rows:[...current().rows,...rows],uploads:[...current().uploads,upload]});pending=null;
+  await update({...current(),rows:[...current().rows,...rows],uploads:[...current().uploads,upload]});
+  category=upload.type;$$('[data-type]').forEach(b=>b.classList.toggle('active',b.dataset.type===category));
+  $('#search').value='';$('#filter-flight').value='';$('#issues-only').checked=false;renderRows();
+  uploadStatus(`Imported ${rows.length} record(s) from ${upload.filename} into ${upload.type} / ${upload.flight}. Original file saved in Upload archive.`);pending=null;
 });
 function openEdit(row){
   editing=row.key;showDialog('edit-dialog');const form=$('#edit-form');
