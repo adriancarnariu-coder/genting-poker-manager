@@ -29,3 +29,10 @@ Datele se salvează automat în localStorage, separat pentru fiecare turneu. Sun
 ## Limitele primei versiuni
 
 Fără autentificare, sincronizare între calculatoare sau bază de date pe server. Datele nu sunt transmise serverului. Ștergerea datelor browserului le elimină; exportul CSV permite păstrarea clasamentului, dar importul nu este implementat. Evită utilizarea simultană în mai multe file; aplicația blochează salvarea când detectează modificări într-o altă filă. Nu folosi această versiune ca singura evidență a unui turneu real.
+
+## Publicare online cu GitHub Pages
+
+În GitHub: **Settings → Pages → Build and deployment → Source → GitHub Actions**.
+Workflow-ul `.github/workflows/pages.yml` testează aplicația și publică folderul `public` la fiecare push pe `main`. După activare, rulează workflow-ul **Deploy demo to GitHub Pages** din fila **Actions** dacă prima execuție a eșuat. Linkul live apare în **Settings → Pages** după publicarea reușită.
+
+Este o demonstrație publică, fără autentificare. Fiecare vizitator are propria copie a datelor în browser. Nu introduce date personale reale pentru demonstrații. Disponibilitatea și eventualele costuri GitHub Pages depind de plan și de vizibilitatea repository-ului; nu este necesar să faci repository-ul public pentru această pregătire.
