@@ -2,9 +2,14 @@
 [build]
   base = "."
   command = "npm run build:netlify"
-  publish = "dist"
+  publish = "private-publish"
 
 [build.environment]
   NODE_VERSION = "24"
 
-# No functions or auth routes exist yet. Do not imply the static app is private.
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["dist/**", "auth/login.html", "auth/login.css", "auth/client.js", "docs/version49-manifest.json"]
+
+# The guard remains mandatory. App assets are function-only; never publish dist directly.
