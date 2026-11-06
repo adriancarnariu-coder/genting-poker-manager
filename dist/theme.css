@@ -1,0 +1,49 @@
+:root{color:#f1f3f4;background:#202124}body,main,header,.upload-panel,section,.metrics>div,.file-box,.backup-box,.help-panel,details,#jpeg-viewer,.clock-dialog{background:#202124;color:#f1f3f4}section,.metrics>div,.file-box,.backup-box,.help-panel,details,#jpeg-viewer,.clock-dialog{border-color:#3c4043}.upload-panel{border-color:#3c4043}.muted,.metrics span,.file-box li small,.staff,.help-panel summary,.filter-footer,#status,#staff-view-note,#loaded-flights,.tournament-fields label,.time-field,.clock-format,.clock-instruction,.clock-precision,#jpeg-action-status{color:#bdc1c6}.design-credit,footer{color:#9aa0a6}.tournament-fields input,.date-control,#time-picker-trigger,.filters input,.upload-picker input[type=file],.clock-face{background:#292a2d;border-color:#3c4043;color:#f1f3f4}.filters td,thead,th{background:#202124}th{color:#bdc1c6}th,td,.file-box li{border-color:#3c4043}.table-wrap tbody tr:nth-child(odd){background:#202124}.table-wrap tbody tr:nth-child(even){background:#252629}.table-wrap td:first-child{color:#bdc1c6}.table-wrap #found-count{color:#fff}.upload-panel button,.section-heading button,.filter-footer button,.actions button:not(#generate),.actions .primary:not(#download),.viewer-heading button,#jpeg-viewer .viewer-save-actions a,.clock-dialog button,.clock-digital button{background:#292a2d;border-color:#3c4043;color:#f1f3f4}.upload-panel .remove-file{color:#ff9aa7;border-color:#80424c;background:#292a2d}#generate,.primary,#download,#save-jpeg-as.primary,.clock-digital button[aria-pressed=true],.clock-number.selected{background:#cc1428;border-color:#cc1428;color:#fff}#generate.export-secondary{background:#292a2d;border-color:#3c4043;color:#f1f3f4}.clock-dialog .clock-number{background:transparent;color:#f1f3f4}.clock-dialog .clock-number.selected{background:#cc1428;color:#fff}.clock-hand,.clock-hand:after,.clock-centre{background:#ed334b}.clock-precision span,#time-picker-trigger:after,.calendar-icon{color:#bdc1c6}.clock-tick{background:linear-gradient(#9aa0a6 0 3px,transparent 3px)}.clock-tick.major{background:linear-gradient(#bdc1c6 0 6px,transparent 6px)}.viewer-image-wrap{background:#202124}.clock-dialog::backdrop,#jpeg-viewer::backdrop{background:#202124d9}#errors,#filter-error,.tournament-fields p,#jpeg-viewer-status{color:#ffb4bc}#storage-notice{color:#ffd18a}@media(hover:hover){.table-wrap tbody tr:hover{background:#303134}.upload-panel .remove-file:hover{background:#482b32}}
+.table-wrap .filters td{background:#202124}
+.clock-dialog .clock-actions .primary{background:#cc1428;border-color:#cc1428;color:#fff}
+
+/* Visual refinement of the page only; generated JPEG and clock are unchanged. */
+main{padding-top:36px}
+header{gap:36px;padding:12px 0 32px;margin-bottom:24px;border-bottom:1px solid #cc1428;grid-template-columns:minmax(150px,210px) minmax(0,1fr) minmax(230px,260px)}
+header img{max-width:210px}
+header>div:first-of-type{text-align:center}
+h1{font-size:36px;line-height:1.12;letter-spacing:-1.1px;margin:10px 0 16px}
+header .muted{margin:0 auto;max-width:330px;line-height:1.7}
+.eyebrow{font-size:11px;letter-spacing:3.5px;color:#f16b7b}
+.design-credit{margin-top:12px;opacity:.85}
+.tournament-fields{padding:18px;border:1px solid #3c4043;border-radius:12px;gap:14px;box-shadow:0 6px 20px #00000012}
+.tournament-fields label,.time-field{font-size:12px;letter-spacing:.2px}
+.tournament-fields input,.date-control,#time-picker-trigger{border-radius:7px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:24px 0 14px;align-items:stretch}
+.metrics>div{position:relative;padding:22px 24px;min-height:132px;border-radius:12px;border:1px solid #3c4043;display:flex;flex-direction:column;justify-content:center;box-shadow:0 4px 16px #0000000d}
+.metrics>div:nth-child(2){border-top:2px solid #cc1428}
+.metrics span{font-size:12px;letter-spacing:.6px}
+.metrics strong{font-size:clamp(27px,3vw,38px);line-height:1.15;margin-top:10px;letter-spacing:-.8px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+section{border-radius:12px}
+section h2{letter-spacing:-.2px}
+.upload-panel>div:first-child p{color:#bdc1c6}
+.table-wrap{border:1px solid #3c4043;border-radius:8px}
+#generate:not(.export-secondary),#download{box-shadow:0 4px 14px #cc142824}
+.upload-picker input::file-selector-button{transition:background-color 150ms ease}
+.upload-panel button,.section-heading button,.filter-footer button,.actions button,.actions a,.filters input,.tournament-fields input,.date-control,#time-picker-trigger,.help-panel summary,.file-box summary,.backup-box summary{transition:background-color 150ms ease,border-color 150ms ease,box-shadow 150ms ease}
+.upload-panel button:focus-visible,.section-heading button:focus-visible,.filter-footer button:focus-visible,.actions button:focus-visible,.actions a:focus-visible,summary:focus-visible,#time-picker-trigger:focus-visible{outline:2px solid #f16b7b;outline-offset:3px}
+.filters input:focus,.tournament-fields input:focus,.date-control:focus-within{outline:2px solid #cc1428;outline-offset:2px;border-color:#cc1428}
+@media(hover:hover){#generate:not(:disabled):not(.export-secondary):hover,#download:hover{background:#e01931;border-color:#e01931;box-shadow:0 5px 18px #cc142835}.section-heading button:hover,.filter-footer button:hover,.actions button:not(#generate):hover,.actions a:not(#download):hover{border-color:#777d82}.help-panel summary:hover,.file-box summary:hover,.backup-box summary:hover{color:#fff}}
+@media(min-width:701px) and (max-width:1000px){header{grid-template-columns:150px minmax(0,1fr) 230px;gap:22px}header img{max-width:150px}h1{font-size:30px}.tournament-fields{padding:14px}.metrics>div{padding:20px}}
+@media(max-width:700px){main{padding-top:24px}header{grid-template-columns:minmax(0,1fr);gap:24px;padding:0 0 24px;margin-bottom:20px}header img{width:180px;max-width:100%;justify-self:center}header>div:first-of-type{width:100%;text-align:center}h1{font-size:34px}header .muted{max-width:330px;font-size:14px}.tournament-fields{padding:16px;gap:14px}.metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.metrics>div{padding:18px 12px;min-height:116px}.metrics strong{font-size:25px;letter-spacing:-.5px}.metrics span{font-size:11px;letter-spacing:0}.actions button,.actions a{min-height:44px}}
+@media(max-width:480px){.metrics{grid-template-columns:minmax(0,1fr);gap:10px}.metrics>div{min-height:110px;padding:18px 20px}.metrics strong{font-size:36px}.metrics span{font-size:12px}}
+@media(prefers-reduced-motion:reduce){.upload-panel button,.section-heading button,.filter-footer button,.actions button,.actions a,.filters input,.tournament-fields input,.date-control,#time-picker-trigger,.help-panel summary,.file-box summary,.backup-box summary,.upload-picker input::file-selector-button{transition:none}}
+
+/* One header separator and consistent page spacing. */
+.upload-panel>div:first-child{margin-bottom:12px}
+.upload-panel>.help-panel,.upload-panel>.file-box,.upload-panel>.backup-box{margin:14px 0 0}
+section{margin-bottom:24px}
+header{margin-bottom:24px}
+.metrics{margin-top:24px}
+@media(max-width:700px){section{margin-bottom:20px}header{margin-bottom:20px}.metrics{margin-top:20px}.upload-panel>div:first-child{margin-bottom:12px}}
+
+/* Distinct lines within one accessible brand heading. */
+header h1.brand-title{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-family:Arial,sans-serif;letter-spacing:normal}
+.brand-title .brand-intro{font-size:25px;font-weight:400;line-height:1.2;color:#bdc1c6}
+.brand-title .brand-main{font-size:36px;font-weight:700;line-height:1.12;color:#f1f3f4}
+@media(max-width:700px){.brand-title .brand-intro{font-size:22px}.brand-title .brand-main{font-size:32px}}

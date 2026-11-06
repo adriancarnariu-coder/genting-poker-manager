@@ -1,0 +1,134 @@
+{
+  "version": 49,
+  "sourceCommit": "953f8b7253b49e355642cc148f7fe19f030406bf",
+  "savedVersionId": "appgprj_6ae9ce1deb6c819190a3bd7303eb7b61~appgver_7446456aae1081918c848e3a822bceff",
+  "localArchiveSha256": "ab4a1556762df88b85560eaf346ecae8d8aec0000b984ad97b87569401247219",
+  "files": [
+    {
+      "path": "dist/app.js",
+      "sha256": "2b19212c8b9435d0161c00f14bb77908f187129b9ed67c1709c3fee5d2658682",
+      "bytes": 23594,
+      "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/clock-picker.css",
+      "sha256": "5a0d21529b24136faaf08265cda9e29f8738534881c6f3cd4297955531540219",
+      "bytes": 2938,
+      "localDeploymentAssetSha256": "4ff2c9f632272a4691a0e90c0fab6c34cd54b5b7a027a4820a5cb0feea470a10",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/clock-picker.js",
+      "sha256": "6a44902458a816a91666b0a40e1abadb1e14f9842c547c2fcd3b401ca342e142",
+      "bytes": 7806,
+      "localDeploymentAssetSha256": "f03f3c520084a192bcda6be0eca5895f1df26e39c9c126571297b31249b53c7b",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/excel-import.js",
+      "sha256": "f609b3c32ee7b2a0b388d594b81ba0f0680aa1a21e807f97a6a6c9ff5faf96a4",
+      "bytes": 3714,
+      "localDeploymentAssetSha256": "4331c24cd08c69e734276414d64a7f29fdc658163319d06dcc17556f4fe356c3",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/excel-worker.js",
+      "sha256": "5a0bb0c91841f48492a6ed3fff35ca41461c253a74a73240fee50e1392cbf78b",
+      "bytes": 351,
+      "localDeploymentAssetSha256": "5a0bb0c91841f48492a6ed3fff35ca41461c253a74a73240fee50e1392cbf78b",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/index.html",
+      "sha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
+      "bytes": 9516,
+      "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/jpeg-actions.js",
+      "sha256": "dbc60f0a1472842a5cba39ad82e46ab361de1585659339ad79b2786572fb0286",
+      "bytes": 2864,
+      "localDeploymentAssetSha256": "b70cc8c61ace2d21e01657dde637fc7892b817cf60fb19a364c43ec0ab8147e1",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/jpeg-save-as.js",
+      "sha256": "63dde69f2a4ca7ee7f9107e19265cc602181611552ae3802b01f0931a42951c1",
+      "bytes": 1700,
+      "localDeploymentAssetSha256": "c1d1df70844d9e6091c02f1f667f435558370a2de3cb6446beb354d962f0186b",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/logo-ui.svg",
+      "sha256": "164380c65dc9485214cab02a8facdbb5fddd3a102e429356901f5bd165fe8812",
+      "bytes": 147657,
+      "localDeploymentAssetSha256": "164380c65dc9485214cab02a8facdbb5fddd3a102e429356901f5bd165fe8812",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/logo.jpg",
+      "sha256": "26e6376cbecd31d6701b0e584a710e5dd9e199d4d6a3ed33f4c0f8be3737e7bf",
+      "bytes": 110441,
+      "localDeploymentAssetSha256": "26e6376cbecd31d6701b0e584a710e5dd9e199d4d6a3ed33f4c0f8be3737e7bf",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/model.js",
+      "sha256": "fd4d0f21df305070e54cbb2e181775d565edd99369c8e53859ae378682285c03",
+      "bytes": 18398,
+      "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/responsible-gambling.png",
+      "sha256": "a7ef839ded7d3dd52a4cab6176ce09a26ce768640c0bc9179e0d8ad27430f542",
+      "bytes": 111141,
+      "localDeploymentAssetSha256": "a7ef839ded7d3dd52a4cab6176ce09a26ce768640c0bc9179e0d8ad27430f542",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/session-backup.js",
+      "sha256": "3633e945ba1aef3049989da5c83978e6bffa47a8fd648e98d4b0effdf3cec36c",
+      "bytes": 3492,
+      "localDeploymentAssetSha256": "c34ad48563a990579247dbdfc0b9c7c27b1f99ef2314e9f068b71a7068de945a",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/style.css",
+      "sha256": "71c5f706fdd653b5b2e863e385eed22f1b4584310382680d6d8c0bb1fd5d737a",
+      "bytes": 13999,
+      "localDeploymentAssetSha256": "b4ccf01d718e2c2e5d1ee079197a7f3b930e7edb7283177b31558718037e3a57",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/theme.css",
+      "sha256": "e7d1855b157e3c6ae8387c97d85528474edf279b413fea2c787fc7b07f032d31",
+      "bytes": 7777,
+      "localDeploymentAssetSha256": "d2fea6e59b69dc826199b286afac3da58c9544e737b5a833e0379f21cfbc9843",
+      "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/vendor/LICENSE.sheetjs",
+      "sha256": "f9463066a83f512aaa2c4f5bda7514c82110ec46b703f477d112c90d33b7ed83",
+      "bytes": 11556,
+      "localDeploymentAssetSha256": "f9463066a83f512aaa2c4f5bda7514c82110ec46b703f477d112c90d33b7ed83",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/vendor/xlsx.full.min.cjs",
+      "sha256": "ac8d774d39bb05a527f87912e2c283e237e3633120b31acf20bc6eef0e19eede",
+      "bytes": 951928,
+      "localDeploymentAssetSha256": "ac8d774d39bb05a527f87912e2c283e237e3633120b31acf20bc6eef0e19eede",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/view-mode.js",
+      "sha256": "f356ad96bce312f644ab400f1b6543e74e3fa7db3f82f427d4039a252a98b3d0",
+      "bytes": 505,
+      "localDeploymentAssetSha256": "a3230a064e5109808a7d0d14f55b0b4ef646fb18d53c0ca387f536c3cdac9423",
+      "lineEndingsOnly": true
+    }
+  ]
+}
