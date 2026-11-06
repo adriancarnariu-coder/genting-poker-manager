@@ -1,0 +1,10 @@
+# Review-only migration. The build guard prevents automatic production/preview publication.
+[build]
+  base = "."
+  command = "npm run build:netlify"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# No functions or auth routes exist yet. Do not imply the static app is private.
