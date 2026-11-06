@@ -7,6 +7,23 @@ export const TEST_PROJECT='genting-poker-manager-private';
 export const TEST_SITE_ID='740fcf16-1309-4052-932f-ad16414dde00';
 const sha=/^[0-9a-f]{40}$/;
 const origin=value=>{try{const u=new URL(value);return u.protocol==='https:'&&u.origin===value?u.origin:null;}catch{return null;}};
+const repositoryRoot=fileURLToPath(new URL('../',import.meta.url));
+
+// Git proves which source is actually checked out. Hook/manual builds can supply
+// COMMIT_REF=HEAD or omit it; neither value is a commit SHA. A conflicting full
+// platform SHA must still block, and no metadata value can replace failed Git proof.
+function commitErrors(env,checkoutCommit){
+ const errors=[],approved=env.TEST_APPROVED_COMMIT,hint=env.COMMIT_REF;
+ if(!sha.test(approved||''))errors.push('TEST_APPROVED_COMMIT must be an exact 40-character reviewed commit SHA.');
+ if(!sha.test(checkoutCommit||''))errors.push('The actual Git checkout commit could not be verified.');
+ else if(checkoutCommit!==approved)errors.push('The actual Git checkout commit does not match the approved commit.');
+ if(hint!==undefined&&hint!==''&&hint!=='HEAD'){
+  if(!sha.test(hint))errors.push('Netlify COMMIT_REF is not a supported full SHA or HEAD marker.');
+  else if(hint!==approved)errors.push('Netlify COMMIT_REF conflicts with the approved commit.');
+ }
+ return errors;
+}
+const safeCommit=value=>sha.test(value||'')?value:value==='HEAD'?'[HEAD marker]':value===undefined||value===''?'[missing]':'[invalid]';
 
 // Operator approvals are set in Netlify after review, never committed with an enabled default.
 // This is a release gate, not a substitute for runtime authentication or Git/Netlify access control.
@@ -18,7 +35,7 @@ export function testDeploymentErrors(env,checkoutCommit){
  if(env.PULL_REQUEST!=='false'||env.REVIEW_ID)errors.push('Pull request builds are not allowed.');
  if(env.SITE_NAME!==TEST_PROJECT)errors.push('The approved Netlify project is required.');
  if(env.SITE_ID!==TEST_SITE_ID)errors.push('Netlify SITE_ID must match the pinned approved project ID.');
- if(!sha.test(env.TEST_APPROVED_COMMIT||'')||env.COMMIT_REF!==env.TEST_APPROVED_COMMIT||checkoutCommit!==env.TEST_APPROVED_COMMIT)errors.push('The exact reviewed checkout commit must be approved.');
+ errors.push(...commitErrors(env,checkoutCommit));
  if(env.TEST_DEPLOYMENT_APPROVED!=='synthetic-only-v49')errors.push('Separate test deployment approval is not enabled.');
  const app=origin(env.APP_ORIGIN),prime=origin(env.DEPLOY_PRIME_URL),production=origin(env.URL);
  if(!app||!prime||app!==prime||!production||app===production||new URL(app).hostname===new URL(production).hostname)errors.push('APP_ORIGIN must match the isolated branch URL, not the production address.');
@@ -29,9 +46,14 @@ export function testDeploymentErrors(env,checkoutCommit){
 }
 
 export function runTestDeployment({env=process.env,checkout,run}={}){
- let commit='';try{commit=checkout?checkout():execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{}
+ let commit='';try{commit=checkout?checkout():execFileSync('git',['rev-parse','--verify','HEAD^{commit}'],{cwd:repositoryRoot,encoding:'utf8',stdio:['ignore','pipe','ignore']}).trim();}catch{}
  const errors=testDeploymentErrors(env,commit);
- if(errors.length){console.error('TEST DEPLOYMENT BLOCKED:\n'+errors.map(e=>' - '+e).join('\n'));return 1;}
+ if(errors.length){
+  console.error('TEST DEPLOYMENT BLOCKED:\n'+errors.map(e=>' - '+e).join('\n'));
+  // Only allowlisted public source identifiers; never dump env, stderr or secrets.
+  if(commitErrors(env,commit).length)console.error('Commit diagnostics: '+JSON.stringify({approved:safeCommit(env.TEST_APPROVED_COMMIT),checkout:safeCommit(commit),netlify:safeCommit(env.COMMIT_REF)}));
+  return 1;
+ }
  // No CLI deploy, build hook, provider setup or uploads are performed by this script.
  const childEnv={...env};delete childEnv.GENTING_REAL_FIXTURES;
  for(const args of [['scripts/verify-build.mjs'],['scripts/build-auth.mjs'],['--test','test/*.test.js']]){
