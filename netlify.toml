@@ -13,3 +13,8 @@
   included_files = ["dist/**", "auth/login.html", "auth/login.css", "auth/client.js", "docs/version49-manifest.json"]
 
 # The guard remains mandatory. App assets are function-only; never publish dist directly.
+
+# Named branch override still refuses CONTEXT=production and all Deploy Previews.
+# Approval is disabled unless configured separately in Netlify after explicit authorisation.
+[context."test/v49-netlify"]
+  command = "node scripts/netlify-test-gate.mjs"
