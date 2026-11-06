@@ -46,7 +46,8 @@ export function createGateway({env,store,identity,asset,paths,now=()=>Date.now()
     if(!Number.isFinite(result.expires_in)||result.expires_in<=0||typeof result.access_token!=='string')return response('Unable to sign in.',401);
     const age=Math.min(TTL,Math.floor(result.expires_in)),id=randomBytes(32).toString('hex');
     if(sessionKey)await store.delete(sessionKey);
-    await store.set('session/'+hash(id),{user:cfg.id,created:now(),expires:now()+age*1000,token:crypt(result.access_token,cfg.key)});
+    const created=now();
+    await store.set('session/'+hash(id),{user:cfg.id,created,expires:created+age*1000,token:crypt(result.access_token,cfg.key)});
     return response('{}',200,{'Content-Type':'application/json','Set-Cookie':cookie(id,age)});
    }
    if(path==='/auth/logout'&&req.method==='POST'){
