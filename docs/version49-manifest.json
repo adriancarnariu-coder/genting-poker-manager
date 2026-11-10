@@ -6,10 +6,10 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "2b19212c8b9435d0161c00f14bb77908f187129b9ed67c1709c3fee5d2658682",
-      "bytes": 23594,
+      "sha256": "b9f11d751c32de657e0fbecc5953f9a00cd854af7b8d366c75da1228d6469f21",
+      "bytes": 23644,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/clock-picker.css",
@@ -41,8 +41,8 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
-      "bytes": 9516,
+      "sha256": "2e7dfacace1c4526476dda6d62419ffa170248a71171bd9da9dc8b32ff746381",
+      "bytes": 9538,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
     },
@@ -76,10 +76,10 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "fd4d0f21df305070e54cbb2e181775d565edd99369c8e53859ae378682285c03",
-      "bytes": 18398,
+      "sha256": "87415d81c315ca1f25a28c251305e6dff01791b263cb5182aee55749e5b8f7c0",
+      "bytes": 19258,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/responsible-gambling.png",
@@ -104,10 +104,10 @@
     },
     {
       "path": "dist/theme.css",
-      "sha256": "e7d1855b157e3c6ae8387c97d85528474edf279b413fea2c787fc7b07f032d31",
-      "bytes": 7777,
+      "sha256": "690cf1248dbca07a6e5c23ae97f99d4e9da581faaa76b717783f4ce98e1ee857",
+      "bytes": 7866,
       "localDeploymentAssetSha256": "d2fea6e59b69dc826199b286afac3da58c9544e737b5a833e0379f21cfbc9843",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/vendor/LICENSE.sheetjs",
@@ -129,6 +129,62 @@
       "bytes": 505,
       "localDeploymentAssetSha256": "a3230a064e5109808a7d0d14f55b0b4ef646fb18d53c0ca387f536c3cdac9423",
       "lineEndingsOnly": true
+    },
+    {
+      "path": "dist/vendor/montserrat-OFL.txt",
+      "sha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+      "bytes": 4400
+    },
+    {
+      "path": "dist/vendor/montserrat-variable.ttf",
+      "sha256": "0f7b311b2f3279e4eef9b2f968bcdbab6e28f4daeb1f049f4f278a902bcd82f7",
+      "bytes": 744936
+    }
+  ],
+  "presentationUpdates": [
+    {
+      "description": "Staff interface credit enlarged from 11px to 13.2px; centred with 12px spacing, light grey and semibold author. JPEG and functionality unchanged.",
+      "files": [
+        "dist/index.html",
+        "dist/theme.css"
+      ]
+    },
+    {
+      "description": "Compact charcoal JPEG footer with original artwork and existing minimum artwork height.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Aligned JPEG header and reduced original gambling strip.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Seamless JPEG footer, matched header typography, and bounded high-density JPEG rendering.",
+      "files": [
+        "dist/model.js",
+        "dist/app.js"
+      ]
+    },
+    {
+      "description": "30% larger matched JPEG headings and native 118-player reference size when content fits.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Enlarged original logo and footer artwork, plus larger date and plain white start time.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Centred tournament heading and right-aligned date and start time in the JPEG header.",
+      "files": [
+        "dist/model.js"
+      ]
     }
   ]
 }
