@@ -1,4 +1,5 @@
 import {randomBytes,createHash,createCipheriv,createDecipheriv} from 'node:crypto';
+import {IdentityServiceError} from './identity.mjs';
 export const COOKIE='__Host-genting-session',TTL=1800;
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const cookie=(id,age=TTL)=>`${COOKIE}=${id}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${age}`;
@@ -45,7 +46,8 @@ export function createGateway({env,store,identity,asset,paths,now=()=>Date.now()
     if(!Number.isFinite(result.expires_in)||result.expires_in<=0||typeof result.access_token!=='string')return response('Unable to sign in.',401);
     const age=Math.min(TTL,Math.floor(result.expires_in)),id=randomBytes(32).toString('hex');
     if(sessionKey)await store.delete(sessionKey);
-    await store.set('session/'+hash(id),{user:cfg.id,created:now(),expires:now()+age*1000,token:crypt(result.access_token,cfg.key)});
+    const created=now();
+    await store.set('session/'+hash(id),{user:cfg.id,created,expires:created+age*1000,token:crypt(result.access_token,cfg.key)});
     return response('{}',200,{'Content-Type':'application/json','Set-Cookie':cookie(id,age)});
    }
    if(path==='/auth/logout'&&req.method==='POST'){
@@ -63,7 +65,10 @@ export function createGateway({env,store,identity,asset,paths,now=()=>Date.now()
    const file=path==='/'?'dist/index.html':'dist'+path;
    if(!paths.has(file))return response('Not found',404);
    return await serve(file);
-  }catch{return response('Authentication service unavailable. Please sign in again.',503);}
+  }catch(error){
+   if(error instanceof IdentityServiceError)return response(JSON.stringify({error:error.code}),error.status,{'Content-Type':'application/json'});
+   return response('Authentication service unavailable. Please sign in again.',503);
+  }
   async function serve(file){const {body,type}=await asset(file);let content=body;
    if(file==='dist/index.html')content=body.toString().replace('</body>','<script src="/auth/client.js" defer></script></body>');
    return response(content,200,{'Content-Type':type});

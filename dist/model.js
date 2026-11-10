@@ -84,7 +84,25 @@ export function layout(n){const sections=n<=29?1:n<=79?2:3;return {sections,rows
 export function validTournamentTime(value){return !value||/^([01]\d|2[0-3])[.:][0-5]\d$/.test(value);}
 export function formatTournamentTime(value){const time=String(value??'');return validTournamentTime(time)?time.replace('.',':'):time;}
 function wrapTournamentName(c,value,width){const lines=[];let line='';for(const word of value.split(/\s+/)){const candidate=line?line+' '+word:word;if(c.measureText(candidate).width<=width){line=candidate;continue;}if(line){lines.push(line);line='';}for(const char of Array.from(word)){if(line&&c.measureText(line+char).width>width){lines.push(line);line='';}line+=char;}}if(line)lines.push(line);return lines;}
-export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand){
+let leaderboardFont;
+export function loadLeaderboardFont(){
+ if(!leaderboardFont){
+  const source=new URL('./vendor/montserrat-variable.ttf',import.meta.url);
+  const face=new FontFace('Montserrat',`url("${source.href}")`,{weight:'100 900'});
+  leaderboardFont=face.load().then(font=>document.fonts.add(font)).catch(()=>{
+   leaderboardFont=undefined;
+   throw Error('Could not load Montserrat. The JPEG was not generated.');
+  });
+ }
+ return leaderboardFont;
+}
+const leaderboardDateFormat=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});
+function leaderboardDate(value){
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return '';
+ const date=new Date(value+'T00:00:00Z');
+ return Number.isNaN(date.valueOf())?'':leaderboardDateFormat.format(date).toUpperCase();
+}
+export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,pixelDensity=1){
  if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
  if(!(logo?.naturalWidth>0)||!(logo?.naturalHeight>0))throw Error('The Genting logo could not be loaded. The JPEG was not generated.');
  const l=layout(rows.length);if(!rows.length)throw Error('There are no qualified players.');if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
@@ -96,20 +114,92 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand){
  c.font='bold 19px Arial';const widths=[Math.max(rankWidth,textWidth('RANK')+padding*2),nameWidth,Math.max(250,textWidth('QUALIFIED FROM')+padding*2),Math.max(chipWidth,textWidth('CHIP COUNT')+padding*2)],sectionWidth=widths.reduce((a,b)=>a+b,0);
  l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=bodyFont+'px Arial';const playerLines=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)),baseRowHeight=playerLines.some(lines=>lines.length>1)?86:58;
  const previousVerticalMargin=l.sections===1?64:l.sections===2?80:96,verticalMargin=l.sections===1?32:l.sections===2?40:44,previousFooterGap=l.sections===1?48:l.sections===2?64:72,footerGap=24,bottomMargin=14,rowHeight=baseRowHeight+Math.min(14,Math.floor((previousFooterGap-footerGap+previousVerticalMargin-bottomMargin+2*(previousVerticalMargin-verticalMargin))/l.rows));
- const innerWidth=l.width-80,gap=40,logoWidth=.92*Math.min(480,innerWidth*.32),titleWidth=Math.min(710,innerWidth),titleX=l.width/2,sideWidth=(innerWidth-titleWidth)/2-gap,stacked=sideWidth<Math.max(logoWidth,320),infoWidth=stacked?innerWidth-logoWidth-gap:sideWidth,infoX=l.width-40-infoWidth/2;
- const name=text(tournament.name),nameSize=49;c.font='bold '+nameSize+'px Arial';const nameLines=name?wrapTournamentName(c,name,infoWidth):[];
- c.font='bold 51px Arial';const titleLines=wrapTournamentName(c,'DAY 2 LEADERBOARD',titleWidth),logoHeight=logoWidth*logo.naturalHeight/logo.naturalWidth;
- const date=text(tournament.date),dateLabel=/^\d{4}-\d{2}-\d{2}$/.test(date)?date.split('-').reverse().join('/'):'';
- const info=[];nameLines.forEach(line=>info.push({value:line,font:'bold '+nameSize+'px Arial',size:nameSize}));if(dateLabel)info.push({value:dateLabel,font:'28px Arial',size:28});if(tournament.time)info.push({value:formatTournamentTime(tournament.time),font:'bold 32px Arial',size:52,badge:true});
- const infoHeight=info.reduce((sum,item)=>sum+item.size,0)+Math.max(0,info.length-1)*16,titleHeight=51+(titleLines.length-1)*62+40,topHeight=Math.max(logoHeight,infoHeight),groupHeight=stacked?topHeight+32+titleHeight:Math.max(topHeight,titleHeight),lineY=verticalMargin+groupHeight+verticalMargin,tableY=lineY+48,rowsTop=tableY+24;
- const previousBandY=Math.ceil(rowsTop+l.rows*rowHeight+footerGap),bandWidth=Math.min(l.width-80,Math.max(.8*Math.min(l.width-80,Math.max((l.width-80)*.75,responsibleBand&&responsibleBand.naturalHeight>0?64*responsibleBand.naturalWidth/responsibleBand.naturalHeight:0)),responsibleBand&&responsibleBand.naturalHeight>0?64*responsibleBand.naturalWidth/responsibleBand.naturalHeight:0)),bandX=(l.width-bandWidth)/2;if(responsibleBand&&(!(responsibleBand.naturalWidth>0)||!(responsibleBand.naturalHeight>0)))throw Error('The responsible gambling image could not be loaded.');const bandHeight=responsibleBand?bandWidth*responsibleBand.naturalHeight/responsibleBand.naturalWidth:0;
- const footerTop=rowsTop+l.rows*rowHeight-3,imageHeight=Math.max(Math.ceil(previousBandY+(responsibleBand?bandHeight+bottomMargin:bottomMargin)),Math.ceil(footerTop+bandHeight+28)),bandY=footerTop+(imageHeight-footerTop-bandHeight)/2;canvas.width=l.width;canvas.height=imageHeight;if(canvas.width!==l.width||canvas.height!==imageHeight)throw Error('The image exceeds the browser’s capacity.');c.fillStyle='#202124';c.fillRect(0,0,canvas.width,canvas.height);
- c.drawImage(logo,40,verticalMargin+((stacked?topHeight:groupHeight)-logoHeight)/2,logoWidth,logoHeight);c.save();c.textAlign='center';c.textBaseline='alphabetic';c.fillStyle='#fff';c.font='bold 51px Arial';const titleY=verticalMargin+(stacked?topHeight+32:(groupHeight-titleHeight)/2)+51;titleLines.forEach((line,i)=>c.fillText(line,titleX,titleY+i*62));c.fillStyle='#b5b5b5';c.font='22px Arial';c.fillText(`${rows.length} QUALIFIED ${rows.length===1?'PLAYER':'PLAYERS'}`,titleX,titleY+(titleLines.length-1)*62+40);
- let infoY=verticalMargin+((stacked?topHeight:groupHeight)-infoHeight)/2;for(const item of info){c.font=item.font;if(item.badge){const prefix='STARTS AT ',prefixWidth=c.measureText(prefix).width,timeWidth=c.measureText(item.value).width,ovalWidth=timeWidth+32,totalWidth=prefixWidth+ovalWidth,left=infoX-totalWidth/2,centreY=infoY+item.size/2;c.fillStyle='#fff';c.textBaseline='middle';c.textAlign='left';c.fillText(prefix.trimEnd(),left,centreY);c.textAlign='center';c.fillText(item.value,left+prefixWidth+ovalWidth/2,centreY);c.beginPath();c.strokeStyle='#cc1428';c.lineWidth=2;c.rect(left+prefixWidth,infoY+2,ovalWidth,item.size-4);c.stroke();c.textBaseline='alphabetic';infoY+=item.size;}else{infoY+=item.size;c.fillStyle='#eee';c.fillText(item.value,infoX,infoY);}infoY+=16;}c.restore();c.textAlign='left';c.fillStyle='#cc1428';c.fillRect(40,lineY,canvas.width-80,2);
+ const innerWidth=l.width-80,headerGap=24;
+ const oldSideWidth=innerWidth*(l.sections===3?.35:.29);
+ const logoWidth=Math.min(390,oldSideWidth)*1.3;
+ const logoHeight=logoWidth*logo.naturalHeight/logo.naturalWidth;
+ const leftWidth=Math.max(innerWidth*.25,logoWidth),rightWidth=innerWidth*.25;
+ const titleWidth=innerWidth-leftWidth-rightWidth-2*headerGap;
+ const titleX=40+leftWidth+headerGap+titleWidth/2;
+ const infoX=l.width-40;
+
+ const name=text(tournament.name);
+ const nameSize=l.sections===1?48:l.sections===2?62.4:70.2;
+ const titleSize=nameSize*.8,countSize=titleSize*.8;
+ c.font='bold '+nameSize+'px Arial';
+ const nameLines=name?wrapTournamentName(c,name,titleWidth):[];
+ c.font=titleSize+'px Arial';
+ const titleLines=wrapTournamentName(c,'DAY 2 LEADERBOARD',titleWidth);
+ const centreLines=[
+  ...nameLines.map(value=>({value,size:nameSize,weight:800,colour:'#F2F2F4',tracking:'-0.015em'})),
+  ...titleLines.map(value=>({value,size:titleSize,weight:400,colour:'#C5C8CE',tracking:'0.025em'})),
+  {value:rows.length+' QUALIFIED '+(rows.length===1?'PLAYER':'PLAYERS'),size:countSize,weight:400,colour:'#C5C8CE'}
+ ];
+ const dateLabel=leaderboardDate(text(tournament.date));
+ const time=formatTournamentTime(tournament.time);
+ const rightLines=[
+  ...(dateLabel?[{value:dateLabel,size:37.18*1.2,weight:500,colour:'#C5C8CE'}]:[]),
+  ...(time?[{value:time,size:67.6*1.2,weight:700,colour:'#fff'}]:[])
+ ];
+ const lineGap=7;
+ const blockHeight=lines=>lines.reduce((height,line)=>height+line.size,0)+Math.max(0,lines.length-1)*lineGap;
+ const headerHeight=Math.max(logoHeight,blockHeight(centreLines),blockHeight(rightLines));
+ const headerAxis=verticalMargin+headerHeight/2;
+ const lineY=Math.ceil(verticalMargin+headerHeight+verticalMargin),tableY=lineY+48,rowsTop=tableY+24;
+ const rowsBottom=rowsTop+l.rows*rowHeight-3;
+ let imageHeight=Math.ceil(rowsTop+l.rows*rowHeight+footerGap+bottomMargin);
+ let footer;
+ if(responsibleBand){
+  const {naturalWidth,naturalHeight}=responsibleBand;
+  if(!(naturalWidth>0)||!(naturalHeight>0))throw Error('The responsible gambling image could not be loaded.');
+  const aspect=naturalWidth/naturalHeight;
+  const minimumWidth=64*aspect;
+  const previousWidth=Math.min(innerWidth,Math.max(.8*Math.min(innerWidth,Math.max(.75*innerWidth,minimumWidth)),minimumWidth));
+  const width=Math.min(innerWidth,Math.max(48*aspect,previousWidth*.4)*1.2);
+  const height=width/aspect;
+  const y=Math.ceil(rowsBottom+14);
+  imageHeight=Math.ceil(y+height+8);
+  footer={x:(l.width-width)/2,y,width,height};
+ }
+ // Increase output density within a bounded pixel budget, keeping layout units stable.
+ const referenceSize=rows.length===118&&l.width===3610&&imageHeight<=2918;
+ if(referenceSize)imageHeight=2918;
+ const scale=referenceSize?1:Math.max(1,Math.min(pixelDensity,Math.sqrt(16000000/(l.width*imageHeight)),4096/Math.max(l.width,imageHeight)));
+ const pixelWidth=Math.floor(l.width*scale),pixelHeight=Math.floor(imageHeight*scale);
+ canvas.width=pixelWidth;
+ canvas.height=pixelHeight;
+ if(canvas.width!==pixelWidth||canvas.height!==pixelHeight)throw Error('The image exceeds the browser’s capacity.');
+ if(scale!==1)c.setTransform(scale,0,0,scale,0,0);
+ c.imageSmoothingEnabled=true;
+ c.imageSmoothingQuality='high';
+ c.fillStyle='#202124';
+ c.fillRect(0,0,canvas.width,canvas.height);
+ c.drawImage(logo,40,headerAxis-logoHeight/2,logoWidth,logoHeight);
+ c.save();
+ c.textBaseline='middle';
+ const drawBlock=(lines,x,alignment,width)=>{
+  let y=headerAxis-blockHeight(lines)/2;
+  c.textAlign=alignment;
+  for(const {value,size,weight,colour,tracking} of lines){
+   c.font=weight+' '+size+'px Montserrat';
+   c.letterSpacing=tracking ? parseFloat(tracking)*size+'px' : '0px';
+   c.fillStyle=colour;
+   c.fillText(value,x,y+size/2,width);
+   y+=size+lineGap;
+  }
+ };
+ drawBlock(centreLines,titleX,'center',titleWidth);
+ drawBlock(rightLines,infoX,'right',rightWidth);
+ c.restore();
+ c.textAlign='left';
+ c.fillStyle='#cc1428';
+ c.fillRect(40,lineY,innerWidth,2);
  let offset=0;
  for(let section=0;section<l.sections;section++){const x=40+section*(sectionWidth+sectionGap),count=Math.floor(rows.length/l.sections)+(section<rows.length%l.sections?1:0);let dx=x;c.font='bold 19px Arial';c.fillStyle='#eee';c.textBaseline='alphabetic';JPEG_COLUMNS.forEach((label,i)=>{c.textAlign=i===0||i===3?'right':'left';c.fillText(label,dx+(i===0||i===3?widths[i]-padding:padding),tableY);dx+=widths[i];});
  for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2;c.fillStyle=j%2?'#292A2D':'#202124';c.fillRect(x,top,sectionWidth,rowHeight-3);let dx=x;c.font=bodyFont+'px Arial';c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding),lines=Array.isArray(value)?value:[value];lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));dx+=widths[i];});}
  offset+=count;}
- if(responsibleBand){c.fillStyle='#202124';c.fillRect(0,bandY-16,canvas.width,canvas.height-bandY+16);c.drawImage(responsibleBand,bandX,bandY,bandWidth,bandHeight);}
+ if(footer){
+  c.drawImage(responsibleBand,footer.x,footer.y,footer.width,footer.height);
+ }
  return canvas;
 }
