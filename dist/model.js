@@ -1,3 +1,4 @@
+import {fitInZone,displayDate} from './branding.js';
 export const COLUMNS=['RANK','PLAYER NAME','NATIONALITY','QUALIFIED FROM','CHIP COUNT'];
 export const JPEG_COLUMNS=['RANK','PLAYER NAME','QUALIFIED FROM','CHIP COUNT'];
 export const text=v=>String(v??'').trim();
@@ -134,13 +135,8 @@ export function loadLeaderboardFont(){
  }
  return leaderboardFont;
 }
-const leaderboardDateFormat=new Intl.DateTimeFormat('en-GB',{day:'2-digit',month:'short',year:'numeric',timeZone:'UTC'});
-function leaderboardDate(value){
- if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return '';
- const date=new Date(value+'T00:00:00Z');
- return Number.isNaN(date.valueOf())?'':leaderboardDateFormat.format(date).toUpperCase();
-}
-export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,pixelDensity=1){
+// branding: {gentingCrop, tournamentLogo:{image,crop}} — optional; crops are source rectangles in natural pixels.
+export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,pixelDensity=1,branding={}){
  if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
  if(!(logo?.naturalWidth>0)||!(logo?.naturalHeight>0))throw Error('The Genting logo could not be loaded. The JPEG was not generated.');
  const l=layout(rows.length);if(!rows.length)throw Error('There are no qualified players.');if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
@@ -152,38 +148,42 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  c.font='bold 19px Arial';const widths=[Math.max(rankWidth,textWidth('RANK')+padding*2),nameWidth,Math.max(250,textWidth('QUALIFIED FROM')+padding*2),Math.max(chipWidth,textWidth('CHIP COUNT')+padding*2)],sectionWidth=widths.reduce((a,b)=>a+b,0);
  l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=bodyFont+'px Arial';const playerLines=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)),baseRowHeight=playerLines.some(lines=>lines.length>1)?86:58;
  const previousVerticalMargin=l.sections===1?64:l.sections===2?80:96,verticalMargin=l.sections===1?32:l.sections===2?40:44,previousFooterGap=l.sections===1?48:l.sections===2?64:72,footerGap=24,bottomMargin=14,rowHeight=baseRowHeight+Math.min(14,Math.floor((previousFooterGap-footerGap+previousVerticalMargin-bottomMargin+2*(previousVerticalMargin-verticalMargin))/l.rows));
- const innerWidth=l.width-80,headerGap=24;
- const oldSideWidth=innerWidth*(l.sections===3?.35:.29);
- const logoWidth=Math.min(390,oldSideWidth)*1.3;
- const logoHeight=logoWidth*logo.naturalHeight/logo.naturalWidth;
- const leftWidth=Math.max(innerWidth*.25,logoWidth),rightWidth=innerWidth*.25;
- const titleWidth=innerWidth-leftWidth-rightWidth-2*headerGap;
- const titleX=40+leftWidth+headerGap+titleWidth/2;
- const infoX=l.width-40;
-
- const name=text(tournament.name);
- const nameSize=l.sections===1?48:l.sections===2?62.4:70.2;
- const titleSize=nameSize*.8,countSize=titleSize*.8;
- c.font='bold '+nameSize+'px Arial';
- const nameLines=name?wrapTournamentName(c,name,titleWidth):[];
- c.font=titleSize+'px Arial';
- const titleLines=wrapTournamentName(c,'DAY 2 LEADERBOARD',titleWidth);
- const centreLines=[
-  ...nameLines.map(value=>({value,size:nameSize,weight:800,colour:'#F2F2F4',tracking:'-0.015em'})),
-  ...titleLines.map(value=>({value,size:titleSize,weight:400,colour:'#C5C8CE',tracking:'0.025em'})),
-  {value:rows.length+' QUALIFIED '+(rows.length===1?'PLAYER':'PLAYERS'),size:countSize,weight:400,colour:'#C5C8CE'}
+ const innerWidth=l.width-80;
+ const nameSize=l.sections===1?48:l.sections===2?62.4:70.2,k=nameSize/48;
+ const titleSize=nameSize*.8,countSize=titleSize*.8,dateSize=titleSize;
+ // Two equal logo zones at the same height with symmetric 40px outer margins:
+ // Genting top-left, tournament logo top-right (left empty when there is no tournament logo).
+ const zoneW=Math.round(Math.min(innerWidth*.28,620)),zoneH=Math.round(zoneW*620/1440),zoneY=verticalMargin;
+ const leftZone={x:40,y:zoneY,w:zoneW,h:zoneH},rightZone={x:l.width-40-zoneW,y:zoneY,w:zoneW,h:zoneH};
+ const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight};
+ const gentingBox=fitInZone(gentingCrop,leftZone,'left');
+ const brandImage=branding.tournamentLogo?.image,hasBrand=brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0;
+ const brandCrop=hasBrand?(branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight}):null;
+ const brandBox=hasBrand?fitInZone(brandCrop,rightZone,'right'):null;
+ const headerGap=Math.round(24*k),middleWidth=Math.max(120,innerWidth-2*zoneW-2*headerGap),lineGap=7;
+ const measureFont=(weight,size)=>weight+' '+size+'px Montserrat';
+ // Between the logos: one line each, shrunk to fit rather than wrapped ("DAY" / "2" splits read badly).
+ const fitLine=(value,size,weight)=>{c.font=measureFont(weight,size);const width=c.measureText(value).width;return width>middleWidth?size*middleWidth/width:size;};
+ const subtitle='DAY 2 LEADERBOARD',countLabel=rows.length+' QUALIFIED '+(rows.length===1?'PLAYER':'PLAYERS');
+ const middleLines=[
+  {value:subtitle,size:fitLine(subtitle,titleSize,400),weight:400,colour:'#C5C8CE',tracking:'0.025em'},
+  {value:countLabel,size:fitLine(countLabel,countSize,400),weight:400,colour:'#C5C8CE'}
  ];
- const dateLabel=leaderboardDate(text(tournament.date));
- const time=formatTournamentTime(tournament.time);
- const rightLines=[
-  ...(dateLabel?[{value:dateLabel,size:37.18*1.2,weight:500,colour:'#C5C8CE'}]:[]),
-  ...(time?[{value:time,size:67.6*1.2,weight:700,colour:'#fff'}]:[])
- ];
- const lineGap=7;
  const blockHeight=lines=>lines.reduce((height,line)=>height+line.size,0)+Math.max(0,lines.length-1)*lineGap;
- const headerHeight=Math.max(logoHeight,blockHeight(centreLines),blockHeight(rightLines));
- const headerAxis=verticalMargin+headerHeight/2;
- const lineY=Math.ceil(verticalMargin+headerHeight+verticalMargin),tableY=lineY+48,rowsTop=tableY+24;
+ const headerRowHeight=Math.max(zoneH,blockHeight(middleLines)),headerAxis=zoneY+headerRowHeight/2;
+ // Tournament name: main title centred below the header, at most two lines (shrinks, then shortens).
+ const name=text(tournament.name),titleWidth=innerWidth*.86;let titleFont=nameSize,nameLines=[];
+ if(name){
+  for(;;){c.font=measureFont(800,titleFont);nameLines=wrapTournamentName(c,name,titleWidth);if(nameLines.length<=2||titleFont<=nameSize*.6)break;titleFont=Math.max(nameSize*.6,titleFont*.92);}
+  if(nameLines.length>2){let rest=nameLines.slice(1).join(' ');while(rest.length>1&&c.measureText(rest+'…').width>titleWidth)rest=rest.slice(0,-1);nameLines=[nameLines[0],rest.trimEnd()+'…'];}
+ }
+ // Date and 24-hour UK time on one line directly under the title, e.g. "24 Nov 2026 · 18:15".
+ const dateLine=[displayDate(text(tournament.date)),formatTournamentTime(tournament.time)].filter(Boolean).join(' · ');
+ const titleLineHeight=titleFont*1.15;
+ let cursor=zoneY+headerRowHeight+(nameLines.length||dateLine?Math.round(28*k):0);
+ const titleTop=cursor;cursor+=nameLines.length*titleLineHeight;
+ const dateTop=cursor+(nameLines.length&&dateLine?Math.round(10*k):0);if(dateLine)cursor=dateTop+dateSize*1.2;
+ const lineY=Math.ceil(cursor+verticalMargin),tableY=lineY+48,rowsTop=tableY+24;
  const rowsBottom=rowsTop+l.rows*rowHeight-3;
  let imageHeight=Math.ceil(rowsTop+l.rows*rowHeight+footerGap+bottomMargin);
  let footer;
@@ -212,22 +212,19 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  c.imageSmoothingQuality='high';
  c.fillStyle='#202124';
  c.fillRect(0,0,canvas.width,canvas.height);
- c.drawImage(logo,40,headerAxis-logoHeight/2,logoWidth,logoHeight);
+ c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,gentingBox.x,gentingBox.y,gentingBox.w,gentingBox.h);
+ if(hasBrand)c.drawImage(brandImage,brandCrop.x,brandCrop.y,brandCrop.w,brandCrop.h,brandBox.x,brandBox.y,brandBox.w,brandBox.h);
  c.save();
  c.textBaseline='middle';
- const drawBlock=(lines,x,alignment,width)=>{
-  let y=headerAxis-blockHeight(lines)/2;
-  c.textAlign=alignment;
-  for(const {value,size,weight,colour,tracking} of lines){
-   c.font=weight+' '+size+'px Montserrat';
-   c.letterSpacing=tracking ? parseFloat(tracking)*size+'px' : '0px';
-   c.fillStyle=colour;
-   c.fillText(value,x,y+size/2,width);
-   y+=size+lineGap;
-  }
+ const drawLine=({value,size,weight,colour,tracking},x,y,alignment,width)=>{
+  c.textAlign=alignment;c.font=measureFont(weight,size);
+  c.letterSpacing=tracking ? parseFloat(tracking)*size+'px' : '0px';
+  c.fillStyle=colour;c.fillText(value,x,y,width);
  };
- drawBlock(centreLines,titleX,'center',titleWidth);
- drawBlock(rightLines,infoX,'right',rightWidth);
+ let middleY=headerAxis-blockHeight(middleLines)/2;
+ for(const line of middleLines){drawLine(line,l.width/2,middleY+line.size/2,'center',middleWidth);middleY+=line.size+lineGap;}
+ nameLines.forEach((value,i)=>drawLine({value,size:titleFont,weight:800,colour:'#F2F2F4',tracking:'-0.015em'},l.width/2,titleTop+i*titleLineHeight+titleLineHeight/2,'center',titleWidth));
+ if(dateLine)drawLine({value:dateLine,size:dateSize,weight:600,colour:'#C5C8CE'},l.width/2,dateTop+dateSize*.6,'center',titleWidth);
  c.restore();
  c.textAlign='left';
  c.fillStyle='#cc1428';

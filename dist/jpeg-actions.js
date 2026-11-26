@@ -8,11 +8,11 @@ export function jpegDataUrl(blob,{Reader=globalThis.FileReader,timeout=15000}={}
   try{reader=new Reader();reader.onload=()=>typeof reader.result==='string'&&reader.result.startsWith('data:image/jpeg;base64,')?finish(null,reader.result):finish(Error('The manual image is not a JPEG.'));reader.onerror=()=>finish(Error('The JPEG could not be prepared for manual saving.'));reader.onabort=()=>finish(Error('Preparing the manual image was cancelled.'));reader.readAsDataURL(blob);}catch(error){finish(Error('Manual image preparation is unavailable: '+error.message));}
  });
 }
-export function createJpegArtifact(blob,{URLApi=globalThis.URL,FileClass=globalThis.File,navigatorApi=globalThis.navigator}={}){
+export function createJpegArtifact(blob,{URLApi=globalThis.URL,FileClass=globalThis.File,navigatorApi=globalThis.navigator,filename=jpegFilename}={}){
  if(!blob||blob.type!=='image/jpeg'||!blob.size)throw Error('A valid JPEG was not generated. Generate the leaderboard again.');
  let file=null,canShare=false;
- try{if(FileClass)file=new FileClass([blob],jpegFilename,{type:'image/jpeg'});if(file&&typeof navigatorApi?.share==='function'&&typeof navigatorApi.canShare==='function')canShare=!!navigatorApi.canShare({files:[file]});}catch{canShare=false;}
- return {blob,file,canShare,url:URLApi.createObjectURL(blob),handedOff:false};
+ try{if(FileClass)file=new FileClass([blob],filename,{type:'image/jpeg'});if(file&&typeof navigatorApi?.share==='function'&&typeof navigatorApi.canShare==='function')canShare=!!navigatorApi.canShare({files:[file]});}catch{canShare=false;}
+ return {blob,file,canShare,filename,url:URLApi.createObjectURL(blob),handedOff:false};
 }
 export function retireJpegArtifact(artifact,{URLApi=globalThis.URL,schedule=globalThis.setTimeout}={}){
  if(!artifact)return;

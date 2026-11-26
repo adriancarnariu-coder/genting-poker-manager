@@ -61,3 +61,26 @@ header h1.brand-title{display:flex;flex-direction:column;align-items:center;gap:
 #review .duplicate-group label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;min-height:44px;padding:4px 0}
 #review .duplicate-keep{width:22px;height:22px;flex:none;margin:2px 0 0;accent-color:#cc1428}
 #review .duplicate-group li:has(label){list-style:none;margin-left:-18px}
+/* Tournament branding: Genting logo framed by its visible part; logo upload in the settings card. */
+header .brand-logo{position:relative;display:block;overflow:hidden;width:100%;max-width:210px;align-self:center;justify-self:start}
+header .brand-logo img{position:absolute;max-width:none}
+@media(min-width:701px) and (max-width:1000px){header .brand-logo{max-width:150px}}
+@media(max-width:700px){header .brand-logo{width:180px;justify-self:center}}
+.visually-hidden{position:absolute!important;left:0;top:0;width:1px!important;height:1px!important;min-height:0!important;margin:-1px!important;padding:0!important;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0!important;opacity:0}
+.tournament-fields .logo-actions{position:relative}
+.tournament-fields .logo-field{display:grid;gap:8px;padding-top:12px;border-top:1px solid #3c4043}
+.tournament-fields .logo-title{font-size:12px;letter-spacing:.2px;color:#bdc1c6}
+.tournament-fields .logo-row{display:flex;gap:10px;align-items:center}
+.tournament-fields .logo-thumb{flex:none;width:64px;height:64px;display:grid;place-items:center;border:1px solid #3c4043;border-radius:8px;background:#292a2d;overflow:hidden}
+.tournament-fields .logo-thumb img{max-width:56px;max-height:56px;object-fit:contain}
+.tournament-fields #logo-thumb-empty{font-size:11px;color:#9aa0a6}
+.tournament-fields .logo-actions{display:grid;gap:6px;flex:1;min-width:0}
+.tournament-fields .logo-button{display:flex;align-items:center;justify-content:center;min-height:44px;padding:6px 10px;border:1px solid #3c4043;border-radius:7px;background:#292a2d;color:#f1f3f4;font:600 12px Arial,sans-serif;letter-spacing:.3px;text-transform:uppercase;text-align:center;cursor:pointer}
+.tournament-fields .logo-button:hover{border-color:#cc1428}
+.tournament-fields .logo-button.disabled{opacity:.5;cursor:not-allowed}
+.tournament-fields #logo-upload:focus-visible+.logo-button,.tournament-fields .logo-button:focus-visible{outline:2px solid #cc1428;outline-offset:2px}
+.tournament-fields .logo-scope{display:flex;gap:8px;align-items:center;min-height:32px;font-size:12px;color:#bdc1c6}
+.tournament-fields .logo-scope input{width:18px;height:18px;accent-color:#cc1428}
+.tournament-fields #logo-scope-note{margin:0;font-size:12px;color:#9aa0a6}
+.tournament-fields #logo-status{margin:0;font-size:12px;color:#f1f3f4}
+.tournament-fields #logo-status:empty{display:none}
