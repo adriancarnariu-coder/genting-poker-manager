@@ -56,3 +56,12 @@ The old public Sites application is unchanged and is not protected by this GitHu
 
 Private workbook checks use GENTING_REAL_FIXTURES outside the repository; never commit fixtures.
 The original main is preserved on backup/main-before-version-49-2026-11-06.
+
+## V50 audit fixes (branch claude/v50-audit-improvements)
+
+- Chrome/help links use the current address; no link to the old public copy remains.
+- Uploading a file whose name is already loaded asks: replace it, or keep both (the new one becomes "name (2).xlsx").
+- Duplicate review: each group shows name, Player ID, flight, chips and source. KEEP HIGHEST STACK removes the lower stacks;
+  DIFFERENT PLAYERS keeps all. Decisions are stored with the exact group, so a later file change re-opens review.
+- Session expiry or a network problem no longer clears local data: the app returns to sign-in and the files are still there.
+  Only LOG OUT clears local player data. A notice appears 5 minutes before the session ends.

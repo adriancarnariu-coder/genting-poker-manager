@@ -20,6 +20,7 @@ export function parseSessionBackup(value){
   for(const r of file.records){
    if(!plain(r)||typeof r.key!=='string'||!r.key||keys.has(r.key)||typeof r.originalName!=='string'||typeof r.qualified!=='boolean'||!(r.chips===null||Number.isSafeInteger(r.chips)&&r.chips>=0)||!scalar(r.originalGdpr)||!scalar(r.originalFlight)||!scalar(r.flight)||!scalar(r.originalNationality))fail('a player record is invalid or duplicated.');keys.add(r.key);
    for(const flag of ['consentConflict','nationalityConflict'])if(r[flag]!==undefined&&typeof r[flag]!=='boolean')fail('a conflict flag is invalid.');
+   if(r.duplicateStatus!==undefined&&!['keep','drop','distinct'].includes(r.duplicateStatus)||r.duplicateGroup!==undefined&&(typeof r.duplicateGroup!=='string'||r.duplicateGroup.length>200000))fail('a duplicate decision is invalid.');
    sources(r.consentSources,'Consent');sources(r.nationalitySources,'Nationality');
    // Recheck conflicts from retained raw sources, rather than trusting edited flags.
    if(r.consentSources?.length)Object.assign(r,consentData(r.consentSources));
