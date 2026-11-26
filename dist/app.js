@@ -4,6 +4,7 @@ import {mountClockPicker} from './clock-picker.js';
 import {serializeSessionBackup,parseSessionBackup,backupSummary,backupLimit} from './session-backup.js';
 import {createJpegArtifact,retireJpegArtifact,shareJpegArtifact,jpegDataUrl} from './jpeg-actions.js';
 import {readExcelFile,readBytes} from './excel-import.js';
+import {visibleCrop,logoKeys,exportFilename,checkLogoFile,displayDate} from './branding.js';
 import {publicRows,staffRows,filterRows,invalidRecords,duplicateGroups,drawLeaderboard,loadLeaderboardFont,needsConsentReload,normalizeFlight,flightValue,validTournamentTime,formatTournamentTime,duplicateResolved,unresolvedDuplicates,duplicateDecision,sharedPlayerId,highestStack,highestPerPlayerId,qualifiedFrom,text} from './model.js';
 const $=s=>document.querySelector(s),el=(tag,value)=>{const n=document.createElement(tag);n.textContent=value;return n;},fmt=n=>n.toLocaleString('en-GB');
 let presentation=false;
@@ -59,7 +60,7 @@ let waitingForFiles=false;const selectionHint='No Excel file was received. Choos
 for(const id of ['search-name','search-nationality','search-flight','search-chips'])$('#'+id).oninput=render;
 $('#presentation-mode').onclick=()=>{presentation=!presentation;document.body.classList.toggle('presentation',presentation);$('#presentation-mode').textContent=presentation?'STAFF VIEW':'PRESENTATION MODE';$('#presentation-mode').setAttribute('aria-pressed',String(presentation));$('#staff-view-note').textContent=presentation?'Presentation view — consent-based names. Nationalities hidden.':'Staff view — full names and nationalities. JPEG names follow consent settings.';$('#search-name').value='';$('#search-nationality').value='';$('#search-nationality').disabled=presentation;render();};
 $('#clear-filters').onclick=()=>{for(const id of ['search-name','search-nationality','search-flight','search-chips'])$('#'+id).value='';render();};
-$('#generate').onclick=async()=>{if(busy)return;validateTournamentTime();if(!validTournamentTime(tournamentTime.value)){invalidate();$('#status').textContent='Choose a valid 24-hour time, or clear the time.';timePickerTrigger.focus();return;}const details={name:tournamentName.value,date:tournamentDate.value,time:tournamentTime.value},revision=exportRevision;busy=true;render();try{try{await logo.decode();}catch{throw Error('Could not load the transparent Genting logo (logo-ui.svg). The JPEG was not generated.');}try{await responsibleBand.decode();}catch{throw Error('Could not load responsible-gambling.png. The JPEG was not generated.');}await loadLeaderboardFont();const canvas=drawLeaderboard(document.createElement('canvas'),publicRows(records()),logo,details,responsibleBand,2);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.99));let manualUrl='',manualError='';if(blob)try{manualUrl=await jpegDataUrl(blob);}catch(error){manualError=error.message;}if(revision!==exportRevision){$('#status').textContent='Tournament details changed. Generate the JPEG again.';return;}if(!blob)throw Error('The JPEG could not be created at this size. No incomplete image was exported.');invalidate();jpegArtifact=createJpegArtifact(blob);url=jpegArtifact.url;jpegArtifact.manualUrl=manualUrl||url;jpegArtifact.manualError=manualError;$('#download').href=url;$('#download').hidden=$('#open-jpeg').hidden=$('#jpeg-save-help').hidden=false;$('#share-jpeg').hidden=false;$('#share-jpeg').disabled=false;$('#jpeg').src=jpegArtifact.manualUrl;$('#jpeg').hidden=false;$('#export-status').textContent=`${readyMessage(publicRows(records()).length)} · ${canvas.width} × ${canvas.height} px`;}catch(e){$('#status').textContent=e.message;}finally{busy=false;render();}};
+$('#generate').onclick=async()=>{if(busy)return;validateTournamentTime();if(!validTournamentTime(tournamentTime.value)){invalidate();$('#status').textContent='Choose a valid 24-hour time, or clear the time.';timePickerTrigger.focus();return;}const details={name:tournamentName.value,date:tournamentDate.value,time:tournamentTime.value},revision=exportRevision;busy=true;render();try{try{await logo.decode();}catch{throw Error('Could not load the transparent Genting logo (logo-ui.svg). The JPEG was not generated.');}try{await responsibleBand.decode();}catch{throw Error('Could not load responsible-gambling.png. The JPEG was not generated.');}await loadLeaderboardFont();if(!gentingCrop)gentingCrop=visibleCrop(logo);const canvas=drawLeaderboard(document.createElement('canvas'),publicRows(records()),logo,details,responsibleBand,2,{gentingCrop,tournamentLogo:brand?{image:brand.image,crop:brand.crop}:undefined});const filename=exportFilename(details,canvas.width,canvas.height);const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.99));let manualUrl='',manualError='';if(blob)try{manualUrl=await jpegDataUrl(blob);}catch(error){manualError=error.message;}if(revision!==exportRevision){$('#status').textContent='Tournament details changed. Generate the JPEG again.';return;}if(!blob)throw Error('The JPEG could not be created at this size. No incomplete image was exported.');invalidate();jpegArtifact=createJpegArtifact(blob,{filename});url=jpegArtifact.url;lastPreview=true;$('#download').download=$('#viewer-download').download=filename;jpegArtifact.manualUrl=manualUrl||url;jpegArtifact.manualError=manualError;$('#download').href=url;$('#download').hidden=$('#open-jpeg').hidden=$('#jpeg-save-help').hidden=false;$('#share-jpeg').hidden=false;$('#share-jpeg').disabled=false;$('#jpeg').src=jpegArtifact.manualUrl;$('#jpeg').hidden=false;$('#export-status').textContent=`${readyMessage(publicRows(records()).length)} · ${canvas.width} × ${canvas.height} px`;}catch(e){$('#status').textContent=e.message;}finally{busy=false;render();}};
 render();try{db=await new Promise((resolve,reject)=>{let finished=false;const timer=setTimeout(()=>{finished=true;reject(Error('Storage timed out.'));},8000),r=indexedDB.open('genting-manager-rebuilt',1);r.onupgradeneeded=()=>r.result.createObjectStore('state');r.onsuccess=()=>{if(finished){r.result.close();return;}finished=true;clearTimeout(timer);resolve(r.result);};r.onerror=r.onblocked=()=>{finished=true;clearTimeout(timer);reject(r.error||Error('Storage is blocked.'));};});state=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Storage timed out.')),8000),r=db.transaction('state').objectStore('state').get('workspace');r.onsuccess=()=>{clearTimeout(timer);resolve(r.result||{revision:0,files:[]});};r.onerror=()=>{clearTimeout(timer);reject(r.error);};});storageMode='saved';if(state.files.length)$('#status').textContent='Previously uploaded files have been restored.';}catch{db?.close();db=null;storageMode='session';$('#storage-notice').hidden=false;$('#storage-notice').textContent='Temporary session: browser storage is unavailable. You can import and export, but these files will not be kept after closing or reloading this page. Existing saved files have not been changed.';}render();
 
 // Tournament details remain browser-local and are read at generation time.
@@ -68,7 +69,7 @@ function syncTimeSelectors(value){tournamentTime.value=formatTournamentTime(valu
 
 function displayTournamentDate(){const value=tournamentDate.value;$('#tournament-date-display').textContent=value?value.split('-').reverse().join('/'):'DD/MM/YYYY';}
 function validateTournamentTime(){const invalid=!!tournamentTime.value&&!validTournamentTime(tournamentTime.value);timePickerTrigger.setAttribute('aria-invalid',String(invalid));tournamentTime.setCustomValidity(invalid?'Choose a valid 24-hour time, or clear the time.':'');$('#tournament-time-error').hidden=!invalid;$('#tournament-time-error').textContent=invalid?'Choose a valid 24-hour time, or clear the time.':'';}
-function saveTournamentDetails(){invalidate();tournamentTime.value=formatTournamentTime(tournamentTime.value);displayTournamentDate();validateTournamentTime();try{localStorage.setItem(tournamentKey,JSON.stringify({name:tournamentName.value,date:tournamentDate.value,time:tournamentTime.value}));$('#tournament-storage-error').hidden=true;}catch{$('#tournament-storage-error').textContent='Tournament details could not be saved in this browser.';$('#tournament-storage-error').hidden=false;}}
+function saveTournamentDetails(){scheduleBrand();invalidate();tournamentTime.value=formatTournamentTime(tournamentTime.value);displayTournamentDate();validateTournamentTime();try{localStorage.setItem(tournamentKey,JSON.stringify({name:tournamentName.value,date:tournamentDate.value,time:tournamentTime.value}));$('#tournament-storage-error').hidden=true;}catch{$('#tournament-storage-error').textContent='Tournament details could not be saved in this browser.';$('#tournament-storage-error').hidden=false;}}
 try{const saved=JSON.parse(localStorage.getItem(tournamentKey)||'{}');if(saved&&typeof saved==='object'){if(typeof saved.name==='string')tournamentName.value=saved.name;if(typeof saved.date==='string')tournamentDate.value=saved.date;if(typeof saved.time==='string'){tournamentTime.value=formatTournamentTime(saved.time);if(tournamentTime.value!==saved.time)localStorage.setItem(tournamentKey,JSON.stringify({...saved,time:tournamentTime.value}));}}}catch{}
 syncTimeSelectors(tournamentTime.value);displayTournamentDate();validateTournamentTime();
 for(const input of [tournamentName,tournamentDate]){input.addEventListener('input',saveTournamentDetails);input.addEventListener('change',saveTournamentDetails);}
@@ -98,3 +99,64 @@ $('#cancel-backup-restore').onclick=()=>{clearBackupReview();$('#backup-status')
 $('#confirm-backup-restore').onclick=async()=>{if(busy||!pendingBackup)return;const backup=pendingBackup,previous={files:state.files,tournament:currentTournament()};busy=true;render();try{await commit(backup.files,{restoreUndo:previous});closeUndo();changed();applyBackupTournament(backup.tournament);clearBackupReview();for(const id of ['search-name','search-nationality','search-flight','search-chips'])$('#'+id).value='';$('#backup-status').textContent='Session restored locally. Review the players and confirm the publication policy again before generating a JPEG.';}catch(error){$('#backup-status').textContent=error.message;}finally{busy=false;render();}};
 $('#undo-backup-restore').onclick=async()=>{if(busy||!backupUndo)return;const previous=backupUndo;busy=true;render();try{await commit(previous.files);closeUndo();changed();applyBackupTournament(previous.tournament);clearBackupReview();$('#backup-status').textContent='Previous session restored.';}catch(error){$('#backup-status').textContent=error.message;}finally{busy=false;render();}};
 if(db)try{const previous=await new Promise((resolve,reject)=>{const tx=db.transaction('state'),r=tx.objectStore('state').get('backup-undo');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});if(previous?.revision===state.revision)backupUndo=previous;}catch{}render();
+// ---------- Tournament branding: logo per tournament name (series) or per date (edition).
+let gentingCrop=null,brand=null,brandBusy=false,brandTimer=null,brandRequest=0,lastPreview=false,brandKeys='';
+const memoryLogos=new Map();
+function logoStore(mode,key,value){
+ if(!db){if(mode==='get')return Promise.resolve(memoryLogos.get(key));if(mode==='put')memoryLogos.set(key,value);else memoryLogos.delete(key);return Promise.resolve();}
+ return new Promise((resolve,reject)=>{const tx=db.transaction('state',mode==='get'?'readonly':'readwrite'),store=tx.objectStore('state'),r=mode==='get'?store.get(key):mode==='put'?store.put(value,key):store.delete(key);let result;r.onsuccess=()=>{result=r.result;};tx.oncomplete=()=>resolve(result);tx.onabort=tx.onerror=()=>reject(Error('The logo could not be saved in this browser.'));});
+}
+async function decodeLogo(blob){
+ const url=URL.createObjectURL(blob),image=new Image();image.src=url;
+ try{await image.decode();}catch{URL.revokeObjectURL(url);throw Error('This file could not be read as an image. Choose a PNG, JPEG or WebP logo.');}
+ if(image.naturalWidth<16||image.naturalHeight<16||image.naturalWidth>10000||image.naturalHeight>10000){URL.revokeObjectURL(url);throw Error('The logo must be between 16 and 10,000 pixels wide and high.');}
+ const crop=visibleCrop(image);let thumb=url;
+ // Thumbnail shows the visible part only, like the JPEG, so transparent margins do not shrink it.
+ try{const c=document.createElement('canvas'),s=Math.min(1,112/Math.max(crop.w,crop.h));c.width=Math.max(1,Math.round(crop.w*s));c.height=Math.max(1,Math.round(crop.h*s));c.getContext('2d').drawImage(image,crop.x,crop.y,crop.w,crop.h,0,0,c.width,c.height);thumb=c.toDataURL('image/png');}catch{}
+ return {image,url,crop,thumb};
+}
+function setBrand(next){if(brand&&brand.url!==next?.url)URL.revokeObjectURL(brand.url);brand=next;renderBrand();}
+function renderBrand(){
+ const keys=logoKeys(tournamentName.value,tournamentDate.value),has=!!brand,locked=brandBusy||!keys;
+ $('#logo-thumb-img').hidden=!has;if(has)$('#logo-thumb-img').src=brand.thumb||brand.url;else $('#logo-thumb-img').removeAttribute('src');$('#logo-thumb-empty').hidden=has;
+ $('#logo-upload-label').textContent=has?'Replace logo':'Upload tournament logo';$('#logo-upload-label').classList.toggle('disabled',locked);$('#logo-upload').disabled=locked;
+ $('#logo-remove').hidden=!has;$('#logo-remove').disabled=brandBusy;$('#logo-edition-only').disabled=brandBusy||!keys?.edition;
+ $('#logo-scope-note').textContent=!keys?'Enter the tournament name to add its logo.':has?(brand.scope==='edition'?`Used only on ${displayDate(tournamentDate.value)}.`:`Used for every “${tournamentName.value.trim()}” tournament.`):'No tournament logo: the right corner of the JPEG stays empty.';
+}
+function scheduleBrand(){clearTimeout(brandTimer);brandTimer=setTimeout(loadBrand,300);}
+async function loadBrand(){
+ const id=++brandRequest,keys=logoKeys(tournamentName.value,tournamentDate.value);let found=null;
+ // A different tournament or date: clear the previous upload message.
+ if(JSON.stringify(keys)!==brandKeys){brandKeys=JSON.stringify(keys);$('#logo-status').textContent='';}
+ try{if(keys){const edition=keys.edition?await logoStore('get',keys.edition):null,record=edition||await logoStore('get',keys.series);if(record?.blob)found={...await decodeLogo(record.blob),record,scope:edition?'edition':'series',key:edition?keys.edition:keys.series};}}
+ catch(error){if(id===brandRequest)$('#logo-status').textContent='The saved logo could not be loaded: '+error.message;}
+ if(id!==brandRequest){if(found)URL.revokeObjectURL(found.url);return;}
+ if(brand?.record!==found?.record||!found!==!brand){setBrand(found);return true;}
+ if(found)URL.revokeObjectURL(found.url);renderBrand();return false;
+}
+// Show the new logo immediately: regenerate the JPEG preview if one was already shown and export is allowed.
+function refreshPreview(){invalidate();render();if(lastPreview&&!$('#generate').disabled)$('#generate').click();}
+$('#logo-upload').onchange=async e=>{
+ const file=e.target.files?.[0];e.target.value='';if(!file||brandBusy)return;
+ const keys=logoKeys(tournamentName.value,tournamentDate.value);if(!keys){$('#logo-status').textContent='Enter the tournament name first.';return;}
+ brandBusy=true;renderBrand();$('#logo-status').textContent='Reading logo…';let decoded=null;
+ try{checkLogoFile(file);decoded=await decodeLogo(file);const scope=$('#logo-edition-only').checked&&keys.edition?'edition':'series',key=keys[scope],record={blob:file,name:file.name,type:file.type,updatedAt:new Date().toISOString()};
+  await logoStore('put',key,record);brandRequest++;brandKeys=JSON.stringify(keys);setBrand({...decoded,record,scope,key});decoded=null;$('#logo-status').textContent=`${file.name} saved.`;refreshPreview();}
+ catch(error){if(decoded)URL.revokeObjectURL(decoded.url);$('#logo-status').textContent=`${file.name}: ${error.message} ${brand?'The previous logo was kept.':''}`.trim();}
+ finally{brandBusy=false;renderBrand();}
+};
+$('#logo-remove').onclick=async()=>{
+ if(!brand||brandBusy)return;const removed=brand;brandBusy=true;renderBrand();
+ try{await logoStore('delete',removed.key);setBrand(null);await loadBrand();$('#logo-status').textContent=removed.scope==='edition'&&brand?'Logo for this date removed; the tournament logo is used again.':'Logo removed.';refreshPreview();}
+ catch(error){$('#logo-status').textContent=error.message;}
+ finally{brandBusy=false;renderBrand();}
+};
+$('#logo-edition-only').onchange=renderBrand;
+// Interface: frame the Genting logo by its visible part so it lines up with the header.
+function frameHeaderLogo(crop){
+ const img=document.querySelector('header > img');if(!img||!crop||!(logo.naturalWidth>0))return;
+ const wrap=document.createElement('span');wrap.className='brand-logo';wrap.style.aspectRatio=`${crop.w} / ${crop.h}`;img.replaceWith(wrap);wrap.append(img);
+ img.style.width=logo.naturalWidth/crop.w*100+'%';img.style.height=logo.naturalHeight/crop.h*100+'%';img.style.left=-crop.x/crop.w*100+'%';img.style.top=-crop.y/crop.h*100+'%';
+}
+logo.decode().then(()=>{gentingCrop=visibleCrop(logo);frameHeaderLogo(gentingCrop);}).catch(()=>{});
+renderBrand();loadBrand();

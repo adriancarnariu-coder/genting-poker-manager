@@ -6,9 +6,16 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "3ec5b2b2d3d99644b281db926e08d4265655dfe0828e0c9069c58b11f26a1c3a",
-      "bytes": 28302,
+      "sha256": "31b18371da58df91ce707e10efeec9d2a74bb06408b531d21c90feb2964ef67e",
+      "bytes": 34972,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/branding.js",
+      "sha256": "b5d9a9b1b72f4ca56471ede700a7609ad5a7b5997d4ce90d2002720087ccda9e",
+      "bytes": 3863,
+      "localDeploymentAssetSha256": null,
       "lineEndingsOnly": false
     },
     {
@@ -41,24 +48,24 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "2592967d75cf8943c08ead3718d24e07107f428037e1b3179e7c44826fe98c27",
-      "bytes": 9512,
+      "sha256": "2c1336226865d1dc6323a0c55d29cd9d10bea7afddd8e905ec8625c7cec64b9a",
+      "bytes": 10335,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
     },
     {
       "path": "dist/jpeg-actions.js",
-      "sha256": "dbc60f0a1472842a5cba39ad82e46ab361de1585659339ad79b2786572fb0286",
-      "bytes": 2864,
+      "sha256": "1bec082b32a2cff23445c54db96db986d2e282d572fbbfb4253a8261daaf2b92",
+      "bytes": 2891,
       "localDeploymentAssetSha256": "b70cc8c61ace2d21e01657dde637fc7892b817cf60fb19a364c43ec0ab8147e1",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/jpeg-save-as.js",
-      "sha256": "63dde69f2a4ca7ee7f9107e19265cc602181611552ae3802b01f0931a42951c1",
-      "bytes": 1700,
+      "sha256": "80a4793150fc74f173c4e0e61c67570222bef801452ed1fbd8b018673ac948e8",
+      "bytes": 1719,
       "localDeploymentAssetSha256": "c1d1df70844d9e6091c02f1f667f435558370a2de3cb6446beb354d962f0186b",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/logo-ui.svg",
@@ -76,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "00844de271dad63480d924d82086088fc8088b7c333b3f0b814b5f3f837b8c20",
-      "bytes": 22334,
+      "sha256": "05eabe520e867fb8f65ec648b54e4f3dce9655937a0245f401736fc153ade6fd",
+      "bytes": 24069,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -104,8 +111,8 @@
     },
     {
       "path": "dist/theme.css",
-      "sha256": "fee9298a44c3dd8467707756a9b051ea8afbc9469befcaf5a13f48c69d3d309a",
-      "bytes": 8905,
+      "sha256": "1c2fc366a00bc4c26450fbb464407f47ece4aff2fb2938519a1f4e6072fc7f7f",
+      "bytes": 11319,
       "localDeploymentAssetSha256": "d2fea6e59b69dc826199b286afac3da58c9544e737b5a833e0379f21cfbc9843",
       "lineEndingsOnly": false
     },
@@ -115,6 +122,16 @@
       "bytes": 11556,
       "localDeploymentAssetSha256": "f9463066a83f512aaa2c4f5bda7514c82110ec46b703f477d112c90d33b7ed83",
       "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/vendor/montserrat-OFL.txt",
+      "sha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+      "bytes": 4400
+    },
+    {
+      "path": "dist/vendor/montserrat-variable.ttf",
+      "sha256": "0f7b311b2f3279e4eef9b2f968bcdbab6e28f4daeb1f049f4f278a902bcd82f7",
+      "bytes": 744936
     },
     {
       "path": "dist/vendor/xlsx.full.min.cjs",
@@ -129,16 +146,6 @@
       "bytes": 971,
       "localDeploymentAssetSha256": "a3230a064e5109808a7d0d14f55b0b4ef646fb18d53c0ca387f536c3cdac9423",
       "lineEndingsOnly": false
-    },
-    {
-      "path": "dist/vendor/montserrat-OFL.txt",
-      "sha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
-      "bytes": 4400
-    },
-    {
-      "path": "dist/vendor/montserrat-variable.ttf",
-      "sha256": "0f7b311b2f3279e4eef9b2f968bcdbab6e28f4daeb1f049f4f278a902bcd82f7",
-      "bytes": 744936
     }
   ],
   "presentationUpdates": [
@@ -212,6 +219,19 @@
       "description": "Mixed duplicate groups: keep the highest stack per Player ID, or tick exactly which records to keep.",
       "files": [
         "dist/app.js",
+        "dist/model.js",
+        "dist/theme.css"
+      ]
+    },
+    {
+      "version": "V50 tournament branding",
+      "description": "Tournament logo upload saved per tournament name or date; Genting top-left and tournament logo top-right in equal zones; title centred below the header (max two lines); date and time on one line; export file name with tournament and date.",
+      "files": [
+        "dist/app.js",
+        "dist/branding.js",
+        "dist/index.html",
+        "dist/jpeg-actions.js",
+        "dist/jpeg-save-as.js",
         "dist/model.js",
         "dist/theme.css"
       ]

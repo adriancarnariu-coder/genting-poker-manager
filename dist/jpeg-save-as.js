@@ -5,7 +5,7 @@ export async function saveJpegAs(artifact,{host=globalThis,isCurrent=()=>true}={
  let writable,picking=true;
  try{
   // The picker is called immediately from the user's click, before any await.
-  const handle=await host.showSaveFilePicker({suggestedName:'genting-leaderboard.jpg',types:[{description:'JPEG image',accept:{'image/jpeg':['.jpg','.jpeg']}}],excludeAcceptAllOption:true});picking=false;
+  const handle=await host.showSaveFilePicker({suggestedName:artifact.filename||'genting-leaderboard.jpg',types:[{description:'JPEG image',accept:{'image/jpeg':['.jpg','.jpeg']}}],excludeAcceptAllOption:true});picking=false;
   if(!isCurrent())return {state:'stale',message:'The JPEG changed. Generate it again before saving.'};
   writable=await handle.createWritable();
   if(!isCurrent()){await writable.abort();return {state:'stale',message:'The JPEG changed. Generate it again before saving.'};}

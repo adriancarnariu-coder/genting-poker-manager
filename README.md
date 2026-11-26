@@ -65,3 +65,12 @@ The original main is preserved on backup/main-before-version-49-2026-11-06.
   DIFFERENT PLAYERS keeps all. Decisions are stored with the exact group, so a later file change re-opens review.
 - Session expiry or a network problem no longer clears local data: the app returns to sign-in and the files are still there.
   Only LOG OUT clears local player data. A notice appears 5 minutes before the session ends.
+
+## Tournament branding (branch claude/v50-tournament-branding, local review)
+
+- Tournament settings card: UPLOAD TOURNAMENT LOGO (PNG, JPEG, WebP, max 10 MB) with thumbnail, REPLACE LOGO and REMOVE LOGO.
+- The logo is saved in this browser per tournament name (recurring series); "Only for this date" overrides it for one edition.
+- JPEG: Genting top-left and the tournament logo top-right in two equal zones with symmetric margins, framed by their visible
+  (non-transparent) part and drawn from the original image. Without a tournament logo the right zone stays empty.
+- Tournament name centred below the header (max two lines), then date and 24-hour time on one line, e.g. "24 Nov 2026 · 18:15".
+- Download name: <Tournament>_<YYYY-MM-DD>_Day2_Leaderboard_<W>x<H>.jpg. Logos are not part of session backups.
