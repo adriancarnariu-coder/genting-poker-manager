@@ -6,8 +6,8 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "650a38821844569159b8dc499e4b6f53c00f475a5afde7aa799232f10be6b0d3",
-      "bytes": 27318,
+      "sha256": "3ec5b2b2d3d99644b281db926e08d4265655dfe0828e0c9069c58b11f26a1c3a",
+      "bytes": 28302,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
       "lineEndingsOnly": false
     },
@@ -76,8 +76,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "71d374112b95df991fabe8d6a6b1b59977aecd1f044f6f594107844d8080ab9b",
-      "bytes": 21314,
+      "sha256": "00844de271dad63480d924d82086088fc8088b7c333b3f0b814b5f3f837b8c20",
+      "bytes": 22334,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -104,8 +104,8 @@
     },
     {
       "path": "dist/theme.css",
-      "sha256": "26a5a8fea75c5184bc20754c02ff1bc09b4b6df2f9d55095314ef1b96b74020b",
-      "bytes": 8613,
+      "sha256": "fee9298a44c3dd8467707756a9b051ea8afbc9469befcaf5a13f48c69d3d309a",
+      "bytes": 8905,
       "localDeploymentAssetSha256": "d2fea6e59b69dc826199b286afac3da58c9544e737b5a833e0379f21cfbc9843",
       "lineEndingsOnly": false
     },
@@ -205,6 +205,15 @@
       "description": "Duplicate panel opens only when new unresolved groups appear; offline notice stays visible after a back/forward restore.",
       "files": [
         "dist/app.js"
+      ]
+    },
+    {
+      "version": "V50 mixed duplicate groups",
+      "description": "Mixed duplicate groups: keep the highest stack per Player ID, or tick exactly which records to keep.",
+      "files": [
+        "dist/app.js",
+        "dist/model.js",
+        "dist/theme.css"
       ]
     }
   ]

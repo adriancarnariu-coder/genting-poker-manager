@@ -58,3 +58,6 @@ header h1.brand-title{display:flex;flex-direction:column;align-items:center;gap:
 #review .duplicate-group li.removed{color:#9aa0a6;text-decoration:line-through}
 #review .actions{flex-wrap:wrap}
 #review button{min-height:44px}
+#review .duplicate-group label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;min-height:44px;padding:4px 0}
+#review .duplicate-keep{width:22px;height:22px;flex:none;margin:2px 0 0;accent-color:#cc1428}
+#review .duplicate-group li:has(label){list-style:none;margin-left:-18px}

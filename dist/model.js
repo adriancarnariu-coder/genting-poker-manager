@@ -89,20 +89,34 @@ export function duplicateGroups(records){
  return [...groups.values()].filter(g=>g.length>1);
 }
 export const duplicateGroupKey=group=>group.map(r=>r.key).sort().join('|');
+// Resolved: every member carries the current group key, at least one record is kept, and
+// either all are 'distinct' (different players) or each is an explicit keep/drop.
 export function duplicateResolved(group){
  const key=duplicateGroupKey(group);if(!group.every(r=>r.duplicateGroup===key))return false;
  const status=group.map(r=>r.duplicateStatus);
- return status.every(v=>v==='distinct')||status.filter(v=>v==='keep').length===1&&status.filter(v=>v==='drop').length===group.length-1;
+ return status.every(v=>v==='distinct')||status.every(v=>v==='keep'||v==='drop')&&status.includes('keep');
 }
 export function droppedKeys(records){const out=new Set();for(const g of duplicateGroups(records))if(duplicateResolved(g))for(const r of g)if(r.duplicateStatus==='drop')out.add(r.key);return out;}
 export const unresolvedDuplicates=records=>duplicateGroups(records).filter(g=>!duplicateResolved(g));
 // Highest valid stack wins; on an exact tie the first imported record is kept.
 export const highestStack=group=>group.reduce((best,r)=>(r.chips??-1)>(best.chips??-1)?r:best);
+// Mixed groups (e.g. same name, two Player IDs): keep the highest stack of each Player ID.
+// Only offered when every record has a Player ID and there are at least two different IDs.
+export function highestPerPlayerId(group){
+ if(group.some(r=>!text(r.playerId)))return null;
+ const best=new Map();for(const r of group){const id=text(r.playerId),current=best.get(id);if(!current||(r.chips??-1)>(current.chips??-1))best.set(id,r);}
+ return best.size>1?new Set([...best.values()].map(r=>r.key)):null;
+}
 export function sharedPlayerId(group){const ids=new Set(group.map(r=>text(r.playerId)));return ids.size===1&&!ids.has('')?[...ids][0]:'';}
-// action: 'highest' | 'distinct' | 'reset'. Returns record key -> fields to store on that record.
-export function duplicateDecision(group,action){
- const key=duplicateGroupKey(group),keep=highestStack(group).key;
- return new Map(group.map(r=>[r.key,action==='reset'?{duplicateStatus:undefined,duplicateGroup:undefined}:action==='distinct'?{duplicateStatus:'distinct',duplicateGroup:key}:{duplicateStatus:r.key===keep?'keep':'drop',duplicateGroup:key}]));
+// action: 'highest' | 'per-id' | 'select' (with keepKeys) | 'distinct' | 'reset'.
+// Returns record key -> fields to store on that record.
+export function duplicateDecision(group,action,keepKeys=[]){
+ const key=duplicateGroupKey(group);
+ if(action==='reset')return new Map(group.map(r=>[r.key,{duplicateStatus:undefined,duplicateGroup:undefined}]));
+ if(action==='distinct')return new Map(group.map(r=>[r.key,{duplicateStatus:'distinct',duplicateGroup:key}]));
+ const keep=action==='highest'?new Set([highestStack(group).key]):action==='per-id'?highestPerPlayerId(group):action==='select'?new Set(keepKeys):null;
+ if(!keep||!group.some(r=>keep.has(r.key)))throw Error('Choose at least one record to keep.');
+ return new Map(group.map(r=>[r.key,{duplicateStatus:keep.has(r.key)?'keep':'drop',duplicateGroup:key}]));
 }
 export function layout(n){const sections=n<=29?1:n<=79?2:3;return {sections,rows:Math.ceil(n/sections),width:sections*1200+80,height:245+Math.ceil(n/sections)*58};}
 export function validTournamentTime(value){return !value||/^([01]\d|2[0-3])[.:][0-5]\d$/.test(value);}

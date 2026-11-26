@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
 import vm from 'node:vm';
-import {publicRows,staffRows,invalidRecords,duplicateGroups,duplicateResolved,unresolvedDuplicates,duplicateDecision,highestStack,sharedPlayerId} from '../dist/model.js';
+import {publicRows,staffRows,invalidRecords,duplicateGroups,duplicateResolved,unresolvedDuplicates,duplicateDecision,highestStack,highestPerPlayerId,sharedPlayerId} from '../dist/model.js';
 import {uniqueFilename} from '../dist/view-mode.js';
 import {parseSessionBackup,serializeSessionBackup} from '../dist/session-backup.js';
 
@@ -42,6 +42,17 @@ test('overlapping ID and name matches form one group; exact ties keep the first 
  const groups=duplicateGroups([a,b,c]);assert.equal(groups.length,1);assert.equal(groups[0].length,3);assert.equal(highestStack(groups[0]).key,a.key);
  assert.equal(invalidRecords([a,b,c]).length,1);
  const all=apply([a,b,c],duplicateDecision(groups[0],'highest'));assert.equal(invalidRecords(all).length,0);assert.equal(publicRows(all).length,1);
+});
+
+test('mixed group: same name with two Player IDs keeps the highest stack of each ID, or exactly the ticked records',()=>{
+ const a=rec('Alex Stone','P1','1A',300000),b=rec('Alex Stone','P1','1C',450000),c=rec('Alex Stone','P2','1B',200000);
+ const g=duplicateGroups([a,b,c])[0];assert.equal(g.length,3);assert.equal(sharedPlayerId(g),'');
+ assert.deepEqual([...highestPerPlayerId(g)].sort(),[b.key,c.key].sort());
+ let all=apply([a,b,c],duplicateDecision(g,'per-id'));assert.equal(unresolvedDuplicates(all).length,0);assert.deepEqual(publicRows(all).map(r=>r.chips),[450000,200000]);
+ all=apply([a,b,c],duplicateDecision(g,'select',[a.key,c.key]));assert.deepEqual(publicRows(all).map(r=>r.chips),[300000,200000]);
+ assert.throws(()=>duplicateDecision(g,'select',[]),/at least one/);
+ assert.equal(highestPerPlayerId(duplicateGroups([a,b])[0]),null);
+ assert.equal(highestPerPlayerId(duplicateGroups([a,rec('Alex Stone','','1D',1)])[0]),null);
 });
 
 test('a second file with the same name gets a distinct name instead of replacing the first',()=>{
