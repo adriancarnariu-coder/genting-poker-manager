@@ -70,16 +70,54 @@ export function parseWorkbook(XLSX,bytes,filename){
  }
  if(!records.length)throw Error('The file contains no player records.');return records;
 }
-export const invalidRecords=records=>records.filter(r=>r.qualified&&(!text(r.originalName)||r.chips===null||r.chips<=0||!normalizeFlight(flightValue(r))));
-export function publicRows(records){return records.filter(r=>r.qualified).sort((a,b)=>(b.chips??-1)-(a.chips??-1)).map((r,i)=>({rank:i+1,name:!r.consentConflict&&nameConsent(r.originalGdpr)?text(r.originalName):initials(r.originalName),nationality:publicNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
-export function staffRows(records){return records.filter(r=>r.qualified).sort((a,b)=>(b.chips??-1)-(a.chips??-1)).map((r,i)=>({rank:i+1,name:text(r.originalName)||'—',nationality:staffNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
+export const invalidRecords=records=>{const dropped=droppedKeys(records);return records.filter(r=>r.qualified&&!dropped.has(r.key)&&(!text(r.originalName)||r.chips===null||r.chips<=0||!normalizeFlight(flightValue(r))));};
+export function publicRows(records){const dropped=droppedKeys(records);return records.filter(r=>r.qualified&&!dropped.has(r.key)).sort((a,b)=>(b.chips??-1)-(a.chips??-1)).map((r,i)=>({rank:i+1,name:!r.consentConflict&&nameConsent(r.originalGdpr)?text(r.originalName):initials(r.originalName),nationality:publicNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
+export function staffRows(records){const dropped=droppedKeys(records);return records.filter(r=>r.qualified&&!dropped.has(r.key)).sort((a,b)=>(b.chips??-1)-(a.chips??-1)).map((r,i)=>({rank:i+1,name:text(r.originalName)||'—',nationality:staffNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
 // Search the supplied display projection; JPEG generation uses publicRows separately.
 export function filterRows(rows,{name='',nationality='',flight='',chipCount=''}={}){
  const n=text(name).toLocaleLowerCase(),nation=text(nationality).toLocaleLowerCase(),flightQuery=text(flight),f=normalizeFlight(flightQuery),query=text(chipCount),prefix=query.replace(/[, \u00a0]/g,'');
  if(query&&(!/^[\d, \u00a0]+$/.test(query)||!/^\d+$/.test(prefix)))return {rows:[],error:'Use only digits, commas or spaces for chip count.'};
  return {rows:rows.filter(r=>(!n||r.name.toLocaleLowerCase().includes(n))&&(!nation||text(r.nationality).toLocaleLowerCase().includes(nation))&&(!flightQuery||f!==null&&normalizeFlight(r.flight)===f)&&(!prefix||r.chips!==null&&String(r.chips).startsWith(prefix))),error:''};
 }
-export function duplicateGroups(records){const groups=new Map();for(const r of records.filter(r=>r.qualified)){for(const key of [r.playerId?'id:'+r.playerId:null,text(r.originalName)?'name:'+text(r.originalName).toLocaleLowerCase():null].filter(Boolean))groups.set(key,[...(groups.get(key)||[]),r]);}const seen=new Set();return [...groups.values()].filter(g=>{const k=g.map(r=>r.key).sort().join('|');if(g.length<2||seen.has(k))return false;seen.add(k);return true;});}
+// Duplicate review: overlapping Player ID / name matches form one group. A staff decision is
+// stored on each record with the exact group membership, so any later file change re-opens review.
+const duplicateName=r=>text(r.originalName).toLocaleLowerCase().replace(/\s+/gu,' ');
+export function duplicateGroups(records){
+ const list=records.filter(r=>r.qualified),parent=list.map((_,i)=>i),find=i=>parent[i]===i?i:(parent[i]=find(parent[i])),seen=new Map();
+ list.forEach((r,i)=>{for(const key of [text(r.playerId)?'id:'+text(r.playerId):null,duplicateName(r)?'name:'+duplicateName(r):null].filter(Boolean)){if(seen.has(key))parent[find(i)]=find(seen.get(key));else seen.set(key,i);}});
+ const groups=new Map();list.forEach((r,i)=>{const root=find(i);groups.set(root,[...(groups.get(root)||[]),r]);});
+ return [...groups.values()].filter(g=>g.length>1);
+}
+export const duplicateGroupKey=group=>group.map(r=>r.key).sort().join('|');
+// Resolved: every member carries the current group key, at least one record is kept, and
+// either all are 'distinct' (different players) or each is an explicit keep/drop.
+export function duplicateResolved(group){
+ const key=duplicateGroupKey(group);if(!group.every(r=>r.duplicateGroup===key))return false;
+ const status=group.map(r=>r.duplicateStatus);
+ return status.every(v=>v==='distinct')||status.every(v=>v==='keep'||v==='drop')&&status.includes('keep');
+}
+export function droppedKeys(records){const out=new Set();for(const g of duplicateGroups(records))if(duplicateResolved(g))for(const r of g)if(r.duplicateStatus==='drop')out.add(r.key);return out;}
+export const unresolvedDuplicates=records=>duplicateGroups(records).filter(g=>!duplicateResolved(g));
+// Highest valid stack wins; on an exact tie the first imported record is kept.
+export const highestStack=group=>group.reduce((best,r)=>(r.chips??-1)>(best.chips??-1)?r:best);
+// Mixed groups (e.g. same name, two Player IDs): keep the highest stack of each Player ID.
+// Only offered when every record has a Player ID and there are at least two different IDs.
+export function highestPerPlayerId(group){
+ if(group.some(r=>!text(r.playerId)))return null;
+ const best=new Map();for(const r of group){const id=text(r.playerId),current=best.get(id);if(!current||(r.chips??-1)>(current.chips??-1))best.set(id,r);}
+ return best.size>1?new Set([...best.values()].map(r=>r.key)):null;
+}
+export function sharedPlayerId(group){const ids=new Set(group.map(r=>text(r.playerId)));return ids.size===1&&!ids.has('')?[...ids][0]:'';}
+// action: 'highest' | 'per-id' | 'select' (with keepKeys) | 'distinct' | 'reset'.
+// Returns record key -> fields to store on that record.
+export function duplicateDecision(group,action,keepKeys=[]){
+ const key=duplicateGroupKey(group);
+ if(action==='reset')return new Map(group.map(r=>[r.key,{duplicateStatus:undefined,duplicateGroup:undefined}]));
+ if(action==='distinct')return new Map(group.map(r=>[r.key,{duplicateStatus:'distinct',duplicateGroup:key}]));
+ const keep=action==='highest'?new Set([highestStack(group).key]):action==='per-id'?highestPerPlayerId(group):action==='select'?new Set(keepKeys):null;
+ if(!keep||!group.some(r=>keep.has(r.key)))throw Error('Choose at least one record to keep.');
+ return new Map(group.map(r=>[r.key,{duplicateStatus:keep.has(r.key)?'keep':'drop',duplicateGroup:key}]));
+}
 export function layout(n){const sections=n<=29?1:n<=79?2:3;return {sections,rows:Math.ceil(n/sections),width:sections*1200+80,height:245+Math.ceil(n/sections)*58};}
 export function validTournamentTime(value){return !value||/^([01]\d|2[0-3])[.:][0-5]\d$/.test(value);}
 export function formatTournamentTime(value){const time=String(value??'');return validTournamentTime(time)?time.replace('.',':'):time;}
