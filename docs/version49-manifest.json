@@ -6,8 +6,8 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "27c1c364459c23c2f513257657148d01fb2d739c1ecef2286fb41698dc6f6bcd",
-      "bytes": 27133,
+      "sha256": "650a38821844569159b8dc499e4b6f53c00f475a5afde7aa799232f10be6b0d3",
+      "bytes": 27318,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
       "lineEndingsOnly": false
     },
@@ -198,6 +198,13 @@
         "dist/session-backup.js",
         "dist/theme.css",
         "dist/view-mode.js"
+      ]
+    },
+    {
+      "version": "V50 review follow-up",
+      "description": "Duplicate panel opens only when new unresolved groups appear; offline notice stays visible after a back/forward restore.",
+      "files": [
+        "dist/app.js"
       ]
     }
   ]

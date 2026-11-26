@@ -30,9 +30,11 @@ function render(){const all=records(),rows=displayRows(all,presentation),invalid
  $('#upload').disabled=$('#replace-upload').disabled=busy||storageMode==='loading';$('#undo').disabled=busy;$('#generate').disabled=busy||!rows.length||invalid.length>0||!$('#policy').checked||groups.some(g=>!duplicateResolved(g));
 }
 function confirmReplace(name,existing){try{return window.confirm(`"${name}" is already loaded (${existing.records.length} records).\n\nOK: replace the loaded file.\nCancel: keep both files.`);}catch{return false;}}
+// Open the review panel only when new unresolved groups appear, so staff can collapse it while filtering.
+let openDuplicateCount=0;
 function renderDuplicates(groups){
  const open=groups.filter(g=>!duplicateResolved(g));
- $('#review').hidden=!groups.length;if(open.length)$('#review').open=true;
+ $('#review').hidden=!groups.length;if(open.length>openDuplicateCount)$('#review').open=true;openDuplicateCount=open.length;
  $('#review summary').textContent=open.length?`Potential duplicates — ${open.length} of ${groups.length} ${groups.length===1?'group':'groups'} to review`:`Potential duplicates — all ${groups.length} resolved`;
  $('#duplicates-keep-highest').hidden=!open.some(g=>sharedPlayerId(g));$('#duplicates-keep-highest').disabled=busy;
  $('#duplicate-list').replaceChildren(...groups.map(g=>{

@@ -72,7 +72,7 @@ test('no application file links to the old public copy of the app',async()=>{
 
 // Runs the real auth/client.js in a minimal fake browser.
 async function runClient({hash='',fetchImpl,login=false}){
- const replaced=[],deleted=[],posted=[];const element=()=>({style:{},hidden:false,textContent:'',disabled:false,elements:{password:{value:''},email:{value:''}},setAttribute(){},append(){},querySelector:()=>element()});
+ const replaced=[],deleted=[],posted=[],created=[];const element=()=>({style:{},hidden:false,textContent:'',disabled:false,elements:{password:{value:''},email:{value:''}},setAttribute(){},append(){},querySelector:()=>element()});
  const form=login?element():null;
  const context={console,setTimeout,clearTimeout,setInterval:()=>0,URLSearchParams,JSON,Object,Error,Math,Date,Promise,
   BroadcastChannel:class{postMessage(m){posted.push(m);}},
@@ -80,17 +80,19 @@ async function runClient({hash='',fetchImpl,login=false}){
   location:{hash,origin:'https://app.example',replace:u=>replaced.push(u)},
   localStorage:{removeItem(){}},
   indexedDB:{deleteDatabase:name=>{deleted.push(name);const r={};setTimeout(()=>r.onsuccess?.(),0);return r;}},
-  document:{body:{style:{},append(){}},hidden:false,addEventListener(){},createElement:()=>element(),createTextNode:t=>t,querySelector:s=>s==='#login'?form:element()},
+  document:{body:{style:{},append(){}},hidden:false,addEventListener(){},createElement:()=>{const e=element();created.push(e);return e;},createTextNode:t=>t,querySelector:s=>s==='#login'?form:element()},
   window:{addEventListener(){}},
   fetch:fetchImpl};
  vm.runInNewContext(await readFile('auth/client.js','utf8'),context);
  await new Promise(r=>setTimeout(r,20));
- return {replaced,deleted,posted};
+ return {replaced,deleted,posted,created};
 }
 
 test('a network failure during the session check never signs out or clears data',async()=>{
- const {replaced,deleted}=await runClient({fetchImpl:async()=>{throw Error('offline');}});
+ const {replaced,deleted,created}=await runClient({fetchImpl:async()=>{throw Error('offline');}});
  assert.deepEqual(replaced,[]);assert.deepEqual(deleted,[]);
+ // The notice stays visible even if the page body is hidden after a back/forward restore.
+ assert(created.some(e=>e.style.visibility==='visible'&&/Connection problem/.test(e.textContent)));
  const unavailable=await runClient({fetchImpl:async()=>({status:503,ok:false})});
  assert.deepEqual(unavailable.replaced,[]);
 });
