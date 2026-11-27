@@ -40,12 +40,13 @@ export function logoKeys(name,date){
  return {series:'logo:series:'+slug,edition:isoDate(date)?'logo:edition:'+slug+'|'+date:null};
 }
 
-export function exportFilename({name,date}={},width,height){
+export function exportFilename({name,date}={},width,height,page){
  let part=plain(name).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
  // Long names are shortened at a word boundary.
  if(part.length>60){part=part.slice(0,61);part=part.slice(0,part.lastIndexOf('_')>20?part.lastIndexOf('_'):60);}
  part=part||'Genting';
- return `${part}_${isoDate(date)?date:'undated'}_Day2_Leaderboard_${width}x${height}.jpg`;
+ const pagePart=page?.total>1?`_${page.number}of${page.total}`:'';
+ return `${part}_${isoDate(date)?date:'undated'}_Day2_Leaderboard${pagePart}_${width}x${height}.jpg`;
 }
 
 export function checkLogoFile(file){

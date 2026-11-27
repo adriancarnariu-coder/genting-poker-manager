@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {drawLeaderboard} from '../dist/model.js';
+import {drawLeaderboard,BAND_GAP} from '../dist/model.js';
 const png=readFileSync(new URL('../dist/responsible-gambling.png',import.meta.url));
 const band={naturalWidth:png.readUInt32BE(16),naturalHeight:png.readUInt32BE(20)};
 test('original PNG footer appears once below every player centred at a readable reduced width and original proportions',()=>{
@@ -17,9 +17,9 @@ test('original PNG footer appears once below every player centred at a readable 
   assert(Math.abs(w/h-aspect)<1e-9);
   assert.equal(text.filter(t=>t.value==='J. S.').length,n);
   assert.deepEqual(rects[0],{colour:'#202124',r:[0,0,canvas.width,canvas.height]});
-  const rowsBottom=Math.max(...rects.filter(r=>r.r[0]>=40&&['#202124','#292A2D'].includes(r.colour)).map(r=>r.r[1]+r.r[3]));
-  assert.equal(y,Math.ceil(rowsBottom+14));
-  const naturalHeight=Math.ceil(y+h+8);
+  const rowsBottom=Math.max(...rects.filter(r=>r.r[0]>=40&&['#202124','#292A2D','#33301F'].includes(r.colour)).map(r=>r.r[1]+r.r[3]));
+  assert.equal(y,Math.ceil(rowsBottom+BAND_GAP));
+  const naturalHeight=Math.ceil(y+h+BAND_GAP);
   assert.equal(canvas.height,n===118&&canvas.width===3610?Math.max(2918,naturalHeight):naturalHeight);
   assert(rects.filter(r=>r.r[1]>=rowsBottom).length===0);
 

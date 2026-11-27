@@ -84,3 +84,27 @@ header .brand-logo img{position:absolute;max-width:none}
 .tournament-fields #logo-scope-note{margin:0;font-size:12px;color:#9aa0a6}
 .tournament-fields #logo-status{margin:0;font-size:12px;color:#f1f3f4}
 .tournament-fields #logo-status:empty{display:none}
+.page-switcher{align-items:center}
+.page-switcher #page-label{min-width:110px;text-align:center;font-weight:600;color:#f1f3f4}
+.page-switcher button:disabled{opacity:.45;cursor:default}
+.summary-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
+.summary-fields legend{grid-column:1/-1;padding:0;margin-bottom:4px;font-size:12px;color:#bdc1c6}
+.summary-fields label{display:grid;gap:4px;font-size:12px;min-width:0}
+.summary-fields input{width:100%;min-width:0;box-sizing:border-box}
+.format-field{display:grid;gap:6px;max-width:420px;margin:12px 0 4px;font-size:13px;color:#bdc1c6}
+.format-field select{min-height:40px;padding:6px 10px;border-radius:8px;background:#292a2d;color:#f1f3f4;border:1px solid #5f6368;font-size:14px}
+/* V51: tournament fields laid out in rows across the page instead of one long column. */
+@media(min-width:701px){
+header{grid-template-columns:minmax(150px,210px) minmax(0,1fr)}
+header .tournament-fields{grid-column:1/-1;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));align-items:start;column-gap:16px;row-gap:14px}
+header .tournament-fields .time-field{align-content:start}
+header .tournament-fields>p{grid-column:1/-1}
+header .tournament-fields .logo-field{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding-top:14px}
+header .tournament-fields .logo-field #logo-scope-note,header .tournament-fields .logo-field #logo-status{flex:1 1 220px}
+}
+@media(max-width:700px){
+header .tournament-fields{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+header .tournament-fields>label[for=tournament-name],header .tournament-fields>p,header .tournament-fields .logo-field{grid-column:1/-1}
+}
+.export-checks{margin:12px 0 4px;padding:10px 14px 10px 30px;border:1px solid #8a6d1a;border-radius:8px;background:#2b2615;color:#f3d27a;font-size:13px;line-height:1.5}
+.export-checks li+li{margin-top:4px}

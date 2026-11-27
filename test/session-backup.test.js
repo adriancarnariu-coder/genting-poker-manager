@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import XLSX from '../dist/vendor/xlsx.full.min.cjs';
 import {parseWorkbook,publicRows,staffRows} from '../dist/model.js';
-import {parseSessionBackup,serializeSessionBackup,backupSummary} from '../dist/session-backup.js';
+import {parseSessionBackup,serializeSessionBackup,backupSummary,BACKUP_EXTRA_FIELDS} from '../dist/session-backup.js';
 function files(){const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet([['Name','FLT','Chips','GDPR','JPOT','CTY'],['Élodie García','1 A',1380000,'NO','NO','France'],['Same Initials','1 B',150000,'YES','Y','Romania'],['Sample Identity','1 B',140000,'N','N','British']]),'Players');return [{id:'file-a',filename:'original-report.xlsx',records:parseWorkbook(XLSX,XLSX.write(w,{bookType:'xlsx',type:'buffer'}),'original-report.xlsx')}];}
 const details={name:'Deep Stack',date:'2026-12-03',time:'18:30'};
 test('backup round trip retains staff originals and identical consent-safe public output',()=>{
@@ -25,4 +25,12 @@ test('older colon time is normalised and an empty session is a valid portable ba
 test('real imported flights survive transfer without losing players, chips or GDPR',{skip:!process.env.GENTING_REAL_FIXTURES},()=>{
  const base=process.env.GENTING_REAL_FIXTURES,source=['Day 1 a.xlsx','day 1 a re.xlsx','day 1 d.xls','day 1 e.xls'].map((name,i)=>({id:'real-'+i,filename:name,records:parseWorkbook(XLSX,readFileSync(base+'/'+name),name)}));
  const restored=parseSessionBackup(serializeSessionBackup(source,details));assert.equal(backupSummary(restored).qualified,37);assert.deepEqual(publicRows(restored.files.flatMap(f=>f.records)),publicRows(source.flatMap(f=>f.records)));
+});
+
+test('V51 backups keep places paid, big blind, prize pool, 1st place and min cash; older backups still restore',()=>{
+ const extra={...details,paid:'80',bb:'6000',prizePool:'150000',firstPrize:'30500',minCash:'550'};
+ assert.deepEqual(parseSessionBackup(serializeSessionBackup([],extra)).tournament,extra);
+ const old=parseSessionBackup(serializeSessionBackup([],details)).tournament;
+ assert.deepEqual(old,details);for(const key of BACKUP_EXTRA_FIELDS)assert(!(key in old));
+ for(const bad of [{paid:80},{minCash:'9'.repeat(41)},{bb:null}])assert.throws(()=>parseSessionBackup(serializeSessionBackup([],{...details,...bad})),/tournament .* is invalid/);
 });

@@ -24,7 +24,7 @@ export async function shareJpegArtifact(artifact,navigatorApi=globalThis.navigat
  if(!artifact?.file||!artifact.canShare)return {state:'unavailable',message:'File sharing is unavailable. Use DOWNLOAD JPEG or OPEN JPEG.'};
  try{
   // Invoke directly in the click gesture, without awaiting preparation or fetching.
-  await navigatorApi.share({files:[artifact.file]});
+  await navigatorApi.share({files:artifact.files||[artifact.file]});
   return {state:'shared',message:'JPEG passed to system sharing. Saving depends on the destination you selected.'};
  }catch(error){
   if(error?.name==='AbortError')return {state:'cancelled',message:'Sharing cancelled. The JPEG is still available.'};

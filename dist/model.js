@@ -119,7 +119,13 @@ export function duplicateDecision(group,action,keepKeys=[]){
  if(!keep||!group.some(r=>keep.has(r.key)))throw Error('Choose at least one record to keep.');
  return new Map(group.map(r=>[r.key,{duplicateStatus:keep.has(r.key)?'keep':'drop',duplicateGroup:key}]));
 }
-export function layout(n){const sections=n<=29?1:n<=79?2:3;return {sections,rows:Math.ceil(n/sections),width:sections*1200+80,height:245+Math.ceil(n/sections)*58};}
+// V51: at most 20 players per column and 40 per JPEG page; longer leaderboards become several pages.
+export const COLUMN_MAX=20,PAGE_MAX=40;
+// Full pages of 40 in rank order (120 -> 40 + 40 + 40, 50 -> 40 + 10). Designed for up to 160 players (4 pages);
+// more players still export, on further pages of 40, so nobody is ever left out.
+export const PLANNED_MAX=160;
+export function leaderboardPages(rows){const out=[];for(let i=0;i<rows.length;i+=PAGE_MAX)out.push(rows.slice(i,i+PAGE_MAX));return out;}
+export function layout(n){const sections=n<=COLUMN_MAX?1:n<=PAGE_MAX?2:3;return {sections,rows:Math.ceil(n/sections),width:sections*1200+80,height:245+Math.ceil(n/sections)*58};}
 export function validTournamentTime(value){return !value||/^([01]\d|2[0-3])[.:][0-5]\d$/.test(value);}
 export function formatTournamentTime(value){const time=String(value??'');return validTournamentTime(time)?time.replace('.',':'):time;}
 function wrapTournamentName(c,value,width){const lines=[];let line='';for(const word of value.split(/\s+/)){const candidate=line?line+' '+word:word;if(c.measureText(candidate).width<=width){line=candidate;continue;}if(line){lines.push(line);line='';}for(const char of Array.from(word)){if(line&&c.measureText(line+char).width>width){lines.push(line);line='';}line+=char;}}if(line)lines.push(line);return lines;}
@@ -136,56 +142,104 @@ export function loadLeaderboardFont(){
  return leaderboardFont;
 }
 // branding: {gentingCrop, tournamentLogo:{image,crop}} — optional; crops are source rectangles in natural pixels.
+// V51 chip leader: the highest stack of the whole leaderboard gets a gold frame, gold rank and chips and a CHIP LEADER tag
+// (on an exact tie every leader is marked). Player names keep the normal font.
+// V51 places paid: optional, set once all flights have finished. A gold line with IN THE MONEY · TOP N is drawn
+// under the last paid place (nothing when empty, invalid or when every player is paid).
+export function placesPaid(value){const s=String(value??'').trim();if(!/^\d{1,4}$/.test(s))return 0;const n=Number(s);return n>=1?n:0;}
+export const ITM={gold:'#D4AF37',ink:'#202124',font:'bold 17px Arial',label:n=>'IN THE MONEY · TOP '+n};
+// V51 prize pool (optional, typed by staff), shown under the date as "£14,250 prize pool".
+export function prizePool(value){const s=String(value??'').replace(/[£,\s]/g,'');if(!/^\d{1,9}(\.\d{1,2})?$/.test(s))return null;const n=Number(s);return '£'+n.toLocaleString('en-GB',{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2});}
+// V51 top 3: rank 1, 2 and 3 sit in a gold, silver and bronze disc (number in dark bold).
+export const MEDALS={1:'#D4AF37',2:'#C9CDD2',3:'#C88A4A'},MEDAL_INK='#202124';
+function drawMedal(c,x,y,r,colour){c.fillStyle=colour;if(typeof c.arc==='function'&&typeof c.fill==='function'){c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();}else c.fillRect(x-r,y-r,r*2,r*2);}
+// V51 stack in big blinds: optional Day 2 big blind; each stack then shows e.g. "225 BB" in grey before the chips.
+export function bigBlind(value){const s=String(value??'').replace(/[,\s]/g,'');return /^\d{1,9}$/.test(s)&&Number(s)>0?Number(s):0;}
+export function bbLabel(chips,bb){if(!bb)return '';const x=chips/bb;return (x<10?(Math.round(x*10)/10).toLocaleString('en-GB',{maximumFractionDigits:1}):Math.round(x).toLocaleString('en-GB'))+' BB';}
+export const BB_STYLE={colour:'#AEB3B9',scale:.85};
+// V51 header text shared by every format: "<name> · Day 2", the date line, then "N qualified · £X prize pool".
+export function headerText(tournament={},all=[],page){
+ const name=text(tournament.name),total=page?.totalPlayers??all.length,pool=prizePool(tournament.prizePool);
+ const title=name?name+' · Day 2':'Day 2 Leaderboard';
+ const info=[displayDate(text(tournament.date)),formatTournamentTime(tournament.time)].filter(Boolean).join(' · ');
+ const sub=[{text:total+' qualified'},...(pool?[{text:pool+' prize pool',highlight:true}]:[])];
+ // Optional fourth line: first prize and min cash, e.g. "1st place £4,015 · min cash £150". Places paid only draws
+ // the gold line in the table (not shown in the header, to keep it light).
+ const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
+ const extra=[...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
+ return {name,title,info,sub,extra,pageLabel:page?.total>1?page.number+' / '+page.total:''};
+}
+// When "<name> · Day 2" does not fit on one line, "Day 2" gets its own line (never a dangling " ·").
+function titleLines(c,head,width){const lines=wrapTournamentName(c,head.title,width);return lines.length<2||!head.name?lines:[...wrapTournamentName(c,head.name,width),'Day 2'];}
+function drawSegments(c,segments,cx,y,font,max){
+ c.font=font;c.letterSpacing='0px';c.textBaseline='middle';c.textAlign='left';
+ const parts=[];segments.forEach((s,i)=>{if(i)parts.push({text:'  ·  ',colour:'#9AA0A6'});parts.push({text:s.text,colour:s.highlight?LEADER.text:'#E8EAED'});});
+ const widths=parts.map(part=>c.measureText(part.text).width),total=widths.reduce((a,b)=>a+b,0),scale=total>max?max/total:1;
+ let x=cx-total*scale/2;parts.forEach((part,i)=>{c.fillStyle=part.colour;c.fillText(part.text,x,y,widths[i]*scale);x+=widths[i]*scale;});
+}
+// A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
+export const BAND_GAP=40,TABLE_EDGE='#5F6368';
+// Measured on the exported JPEGs (Montserrat, middle baseline): capitals reach 0.52 em above the middle line, descenders 0.45 em below.
+const CAP=.52,DESC=.45;
+// V51 checks before export: plain-language warnings shown above GENERATE. They never block the export.
+const money=v=>{const s=String(v??'').replace(/[£,\s]/g,'');return /^\d{1,9}(\.\d{1,2})?$/.test(s)?Number(s):null;};
+export function exportChecks(t={},rows=[]){
+ const out=[],n=rows.length,typed=v=>String(v??'').trim()!=='',paid=placesPaid(t.paid),bb=bigBlind(t.bb),pool=money(t.prizePool),first=money(t.firstPrize),min=money(t.minCash);
+ if(!text(t.name))out.push('No tournament name: the title will read "Day 2 Leaderboard".');
+ if(!text(t.date))out.push('No date: the date line will be left out.');
+ if(typed(t.paid)&&!paid)out.push('Places paid is not a whole number, so it will not be shown.');
+ if(typed(t.bb)&&!bb)out.push('Day 2 big blind is not a whole number, so BB will not be shown.');
+ for(const [key,label] of [['prizePool','Prize pool'],['firstPrize','1st place prize'],['minCash','Min cash']])if(typed(t[key])&&money(t[key])===null)out.push(label+' is not a valid amount, so it will not be shown.');
+ if(paid&&n&&paid>=n)out.push(`Places paid (${paid}) is not lower than the ${n} qualified players, so no gold line is drawn.`);
+ if(pool!==null&&first!==null&&first>pool)out.push('1st place prize is higher than the prize pool.');
+ if(first!==null&&min!==null&&min>first)out.push('Min cash is higher than the 1st place prize.');
+ if(pool!==null&&min!==null&&paid&&min*paid>pool)out.push('Min cash × places paid is more than the prize pool.');
+ if(bb&&n){const short=rows.filter(r=>r.chips<bb).length;if(short)out.push(`${short} ${short===1?'stack is':'stacks are'} below 1 big blind: check the Day 2 big blind.`);}
+ return out;
+}
+export const LEADER={label:'CHIP LEADER',gold:'#D4AF37',text:'#F3D27A',fill:'#33301F',font:'bold 17px Arial'};
 export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,pixelDensity=1,branding={}){
  if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
  if(!(logo?.naturalWidth>0)||!(logo?.naturalHeight>0))throw Error('The Genting logo could not be loaded. The JPEG was not generated.');
- const l=layout(rows.length);if(!rows.length)throw Error('There are no qualified players.');if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
+ const page=branding.page,measureRows=page?.measureRows||rows,bb=bigBlind(tournament.bb),topChips=Math.max(...measureRows.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaidIndex=paid?measureRows.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaidIndex>=0&&lastPaidIndex<measureRows.length-1?measureRows[lastPaidIndex]:null,bubbles=[],l=layout(rows.length);if(page?.sections){l.sections=page.sections;l.rows=Math.max(page.rows||0,Math.ceil(rows.length/l.sections));}if(!rows.length)throw Error('There are no qualified players.');if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
  if(!validTournamentTime(tournament.time))throw Error('Enter a time from 00:00 to 23:59 (HH:mm).');
  const c=canvas.getContext('2d');if(!c)throw Error('The image exceeds the browser’s capacity.');
  const bodyFont=27,lineHeight=34,padding=14,sectionGap=40;
- c.font=bodyFont+'px Arial';let nameWidth=580;const measuredNames=rows.map(r=>String(r.name));while(measuredNames.some(value=>wrapTournamentName(c,value,nameWidth-padding*2).length>2))nameWidth=Math.ceil(nameWidth*1.15);
- const textWidth=value=>c.measureText(String(value)).width;const rankWidth=Math.max(90,...rows.map(r=>textWidth(r.rank)+padding*2)),chipWidth=Math.max(230,...rows.map(r=>textWidth(r.chips.toLocaleString('en-GB'))+padding*2));
+ c.font=bodyFont+'px Arial';let nameWidth=580;const measuredNames=measureRows.map(r=>String(r.name));while(measuredNames.some(value=>wrapTournamentName(c,value,nameWidth-padding*2).length>2))nameWidth=Math.ceil(nameWidth*1.15);
+ const textWidth=value=>c.measureText(String(value)).width;const rankWidth=Math.max(90,...measureRows.map(r=>textWidth(r.rank)+padding*2)),chipWidth=Math.max(230,...measureRows.map(r=>textWidth(r.chips.toLocaleString('en-GB'))+padding*2+(bb?textWidth(bbLabel(r.chips,bb))*BB_STYLE.scale+16:0)));
  c.font='bold 19px Arial';const widths=[Math.max(rankWidth,textWidth('RANK')+padding*2),nameWidth,Math.max(250,textWidth('QUALIFIED FROM')+padding*2),Math.max(chipWidth,textWidth('CHIP COUNT')+padding*2)],sectionWidth=widths.reduce((a,b)=>a+b,0);
- l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=bodyFont+'px Arial';const playerLines=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)),baseRowHeight=playerLines.some(lines=>lines.length>1)?86:58;
+ l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=bodyFont+'px Arial';const playerLines=rows.map(r=>wrapTournamentName(c,String(r.name),nameWidth-padding*2)),baseRowHeight=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)).some(lines=>lines.length>1)?86:58;
  const previousVerticalMargin=l.sections===1?64:l.sections===2?80:96,verticalMargin=l.sections===1?32:l.sections===2?40:44,previousFooterGap=l.sections===1?48:l.sections===2?64:72,footerGap=24,bottomMargin=14,rowHeight=baseRowHeight+Math.min(14,Math.floor((previousFooterGap-footerGap+previousVerticalMargin-bottomMargin+2*(previousVerticalMargin-verticalMargin))/l.rows));
  const innerWidth=l.width-80;
  const nameSize=l.sections===1?48:l.sections===2?62.4:70.2,k=nameSize/48;
  const titleSize=nameSize*.8,countSize=titleSize*.8,dateSize=titleSize;
  // Two equal logo zones at the same height with symmetric 40px outer margins:
  // Genting top-left, tournament logo top-right (left empty when there is no tournament logo).
- const zoneW=Math.round(Math.min(innerWidth*.28,620)),zoneH=Math.round(zoneW*620/1440),zoneY=verticalMargin;
+ const zoneW=Math.round(Math.min(innerWidth*.28,620)),zoneH=Math.round(zoneW*620/1440),zoneY=BAND_GAP;
  const leftZone={x:40,y:zoneY,w:zoneW,h:zoneH},rightZone={x:l.width-40-zoneW,y:zoneY,w:zoneW,h:zoneH};
  const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight};
  const gentingBox=fitInZone(gentingCrop,leftZone,'left');
  const brandImage=branding.tournamentLogo?.image,hasBrand=brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0;
  const brandCrop=hasBrand?(branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight}):null;
  const brandBox=hasBrand?fitInZone(brandCrop,rightZone,'right'):null;
- const headerGap=Math.round(24*k),middleWidth=Math.max(120,innerWidth-2*zoneW-2*headerGap),lineGap=7;
+ const headerGap=Math.round(24*k),middleWidth=Math.max(120,innerWidth-2*zoneW-2*headerGap),lineGap=Math.round(8*k);
  const measureFont=(weight,size)=>weight+' '+size+'px Montserrat';
- // Between the logos: one line each, shrunk to fit rather than wrapped ("DAY" / "2" splits read badly).
- const fitLine=(value,size,weight)=>{c.font=measureFont(weight,size);const width=c.measureText(value).width;return width>middleWidth?size*middleWidth/width:size;};
- const subtitle='DAY 2 LEADERBOARD',countLabel=rows.length+' QUALIFIED '+(rows.length===1?'PLAYER':'PLAYERS');
- const middleLines=[
-  {value:subtitle,size:fitLine(subtitle,titleSize,400),weight:400,colour:'#C5C8CE',tracking:'0.025em'},
-  {value:countLabel,size:fitLine(countLabel,countSize,400),weight:400,colour:'#C5C8CE'}
- ];
- const blockHeight=lines=>lines.reduce((height,line)=>height+line.size,0)+Math.max(0,lines.length-1)*lineGap;
- const headerRowHeight=Math.max(zoneH,blockHeight(middleLines)),headerAxis=zoneY+headerRowHeight/2;
- // Tournament name: main title centred below the header, at most two lines (shrinks, then shortens).
- const name=text(tournament.name),titleWidth=innerWidth*.86;let titleFont=nameSize,nameLines=[];
- if(name){
-  for(;;){c.font=measureFont(800,titleFont);nameLines=wrapTournamentName(c,name,titleWidth);if(nameLines.length<=2||titleFont<=nameSize*.6)break;titleFont=Math.max(nameSize*.6,titleFont*.92);}
-  if(nameLines.length>2){let rest=nameLines.slice(1).join(' ');while(rest.length>1&&c.measureText(rest+'…').width>titleWidth)rest=rest.slice(0,-1);nameLines=[nameLines[0],rest.trimEnd()+'…'];}
- }
- // Date and 24-hour UK time on one line directly under the title, e.g. "24 Nov 2026 · 18:15".
- const dateLine=[displayDate(text(tournament.date)),formatTournamentTime(tournament.time)].filter(Boolean).join(' · ');
- const titleLineHeight=titleFont*1.15;
- let cursor=zoneY+headerRowHeight+(nameLines.length||dateLine?Math.round(28*k):0);
- const titleTop=cursor;cursor+=nameLines.length*titleLineHeight;
- const dateTop=cursor+(nameLines.length&&dateLine?Math.round(10*k):0);if(dateLine)cursor=dateTop+dateSize*1.2;
- const lineY=Math.ceil(cursor+verticalMargin),tableY=lineY+48,rowsTop=tableY+24;
- const rowsBottom=rowsTop+l.rows*rowHeight-3;
- let imageHeight=Math.ceil(rowsTop+l.rows*rowHeight+footerGap+bottomMargin);
+ const fitLine=(value,size,weight,width=middleWidth)=>{c.font=measureFont(weight,size);const w=c.measureText(value).width;return w>width?size*width/w:size;};
+ // V51 header between the logos: "<name> · Day 2" (at most two lines, shrinking first, then shortened),
+ // the date line, then "N qualified · £X prize pool". Same header on every page.
+ const head=headerText(tournament,measureRows,page),titleWidth=middleWidth;let titleFont=nameSize,nameLines=[];
+ for(;;){c.font=measureFont(800,titleFont);nameLines=titleLines(c,head,titleWidth);if(nameLines.length<=2||titleFont<=nameSize*.6)break;titleFont=Math.max(nameSize*.6,titleFont*.92);}
+ if(nameLines.length>2){let rest=nameLines.slice(1).join(' ');while(rest.length>1&&c.measureText(rest+'…').width>titleWidth)rest=rest.slice(0,-1);nameLines=[nameLines[0],rest.trimEnd()+'…'];}
+ const titleLineHeight=titleFont*1.12,infoSize=head.info?fitLine(head.info,dateSize*.75,600):0,subFit=fitLine(head.sub.map(s=>s.text).join('  ·  '),dateSize*.75,600),extraFit=head.extra.length?fitLine(head.extra.map(s=>s.text).join('  ·  '),dateSize*.75,600):subFit,subSize=Math.min(subFit,extraFit),extraSize=head.extra.length?subSize:0;
+ const infoBlock=head.info?lineGap+infoSize*1.2:0,infoRel=nameLines.length*titleLineHeight+lineGap+infoSize*.6,subRel=nameLines.length*titleLineHeight+infoBlock+lineGap+subSize*.6,extraRel=subRel+subSize*.6+lineGap+extraSize*.6;
+ // Visible extent: cap height of the first title line to the descenders of the qualified / prize pool line.
+ const visTop=titleLineHeight/2-titleFont*CAP,middleHeight=(head.extra.length?extraRel+extraSize*DESC:subRel+subSize*DESC)-visTop;
+ const headerRowHeight=Math.max(zoneH,middleHeight),titleTop=zoneY+(headerRowHeight-middleHeight)/2-visTop,logoShift=(headerRowHeight-zoneH)/2;
+ const infoY=titleTop+infoRel,subY=titleTop+subRel,extraY=titleTop+extraRel;
+ // The table is centred: the same gap (BAND_GAP) above it, between it and the band, and under the band.
+ const spare=0,lineY=Math.ceil(zoneY+headerRowHeight+BAND_GAP),tableY=lineY+48,rowsTop=tableY+24;
+ const rowsBottom=rowsTop+spare+l.rows*rowHeight-3;
+ let imageHeight=Math.ceil(rowsTop+spare+l.rows*rowHeight+footerGap+bottomMargin);
  let footer;
  if(responsibleBand){
   const {naturalWidth,naturalHeight}=responsibleBand;
@@ -195,8 +249,9 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
   const previousWidth=Math.min(innerWidth,Math.max(.8*Math.min(innerWidth,Math.max(.75*innerWidth,minimumWidth)),minimumWidth));
   const width=Math.min(innerWidth,Math.max(48*aspect,previousWidth*.4)*1.2);
   const height=width/aspect;
-  const y=Math.ceil(rowsBottom+14);
-  imageHeight=Math.ceil(y+height+8);
+  // V51: the band sits centred between the table and the bottom edge (same gap above and below).
+  const y=Math.ceil(rowsBottom+BAND_GAP);
+  imageHeight=Math.ceil(y+height+BAND_GAP);
   footer={x:(l.width-width)/2,y,width,height};
  }
  // Increase output density within a bounded pixel budget, keeping layout units stable.
@@ -212,8 +267,8 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  c.imageSmoothingQuality='high';
  c.fillStyle='#202124';
  c.fillRect(0,0,canvas.width,canvas.height);
- c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,gentingBox.x,gentingBox.y,gentingBox.w,gentingBox.h);
- if(hasBrand)c.drawImage(brandImage,brandCrop.x,brandCrop.y,brandCrop.w,brandCrop.h,brandBox.x,brandBox.y,brandBox.w,brandBox.h);
+ c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,gentingBox.x,gentingBox.y+logoShift,gentingBox.w,gentingBox.h);
+ if(hasBrand)c.drawImage(brandImage,brandCrop.x,brandCrop.y,brandCrop.w,brandCrop.h,brandBox.x,brandBox.y+logoShift,brandBox.w,brandBox.h);
  c.save();
  c.textBaseline='middle';
  const drawLine=({value,size,weight,colour,tracking},x,y,alignment,width)=>{
@@ -221,20 +276,99 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
   c.letterSpacing=tracking ? parseFloat(tracking)*size+'px' : '0px';
   c.fillStyle=colour;c.fillText(value,x,y,width);
  };
- let middleY=headerAxis-blockHeight(middleLines)/2;
- for(const line of middleLines){drawLine(line,l.width/2,middleY+line.size/2,'center',middleWidth);middleY+=line.size+lineGap;}
  nameLines.forEach((value,i)=>drawLine({value,size:titleFont,weight:800,colour:'#F2F2F4',tracking:'-0.015em'},l.width/2,titleTop+i*titleLineHeight+titleLineHeight/2,'center',titleWidth));
- if(dateLine)drawLine({value:dateLine,size:dateSize,weight:600,colour:'#C5C8CE'},l.width/2,dateTop+dateSize*.6,'center',titleWidth);
+ if(head.info)drawLine({value:head.info,size:infoSize,weight:600,colour:'#C5C8CE'},l.width/2,infoY,'center',middleWidth);
+ drawSegments(c,head.sub,l.width/2,subY,measureFont(600,subSize),middleWidth);
+ if(head.extra.length)drawSegments(c,head.extra,l.width/2,extraY,measureFont(600,extraSize),middleWidth);
  c.restore();
  c.textAlign='left';
  c.fillStyle='#cc1428';
  c.fillRect(40,lineY,innerWidth,2);
  let offset=0;
- for(let section=0;section<l.sections;section++){const x=40+section*(sectionWidth+sectionGap),count=Math.floor(rows.length/l.sections)+(section<rows.length%l.sections?1:0);let dx=x;c.font='bold 19px Arial';c.fillStyle='#eee';c.textBaseline='alphabetic';JPEG_COLUMNS.forEach((label,i)=>{c.textAlign=i===0||i===3?'right':'left';c.fillText(label,dx+(i===0||i===3?widths[i]-padding:padding),tableY);dx+=widths[i];});
- for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2;c.fillStyle=j%2?'#292A2D':'#202124';c.fillRect(x,top,sectionWidth,rowHeight-3);let dx=x;c.font=bodyFont+'px Arial';c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding),lines=Array.isArray(value)?value:[value];lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));dx+=widths[i];});}
+ // Pages keep the first page's size and type sizes; a page with 20 players or fewer uses one centred column.
+ const drawSections=page?.sections?Math.min(l.sections,rows.length<=COLUMN_MAX?1:2):l.sections,startX=40+(l.sections-drawSections)*(sectionWidth+sectionGap)/2;
+ for(let section=0;section<drawSections;section++){const x=startX+section*(sectionWidth+sectionGap),count=Math.floor(rows.length/drawSections)+(section<rows.length%drawSections?1:0);let dx=x;c.font='bold 19px Arial';c.fillStyle='#eee';c.textBaseline='alphabetic';JPEG_COLUMNS.forEach((label,i)=>{c.textAlign=i===0||i===3?'right':'left';c.fillText(label,dx+(i===0||i===3?widths[i]-padding:padding),tableY);dx+=widths[i];});
+ for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2,leader=r.chips===topChips;if(r===bubbleRow)bubbles.push({x,y:top+rowHeight-1.5,w:sectionWidth});c.fillStyle=leader?LEADER.fill:j%2?'#292A2D':'#202124';c.fillRect(x,top,sectionWidth,rowHeight-3);if(j===count-1){c.fillStyle=TABLE_EDGE;c.fillRect(x,top+rowHeight-5,sectionWidth,2);}if(leader){const b=3,h=rowHeight-3;c.fillStyle=LEADER.gold;c.fillRect(x,top,sectionWidth,b);c.fillRect(x,top+h-b,sectionWidth,b);c.fillRect(x,top,b,h);c.fillRect(x+sectionWidth-b,top,b,h);}let dx=x;c.font=bodyFont+'px Arial';c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding),lines=Array.isArray(value)?value:[value];if(leader&&(i===0||i===3))c.fillStyle=LEADER.text;const medal=i===0?MEDALS[Number(r.rank)]:null;if(medal){c.font='bold '+bodyFont+'px Arial';drawMedal(c,tx-c.measureText(lines[0]).width/2,centre,Math.round(bodyFont*.8),medal);c.fillStyle=MEDAL_INK;c.textAlign='right';}lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));if(medal)c.font=bodyFont+'px Arial';if(i===3&&bb){const used=c.measureText(lines[0]).width;c.font=Math.round(bodyFont*BB_STYLE.scale)+'px Arial';c.fillStyle=leader?LEADER.gold:BB_STYLE.colour;c.textAlign='right';c.fillText(bbLabel(r.chips,bb),tx-used-14,centre);c.font=bodyFont+'px Arial';}dx+=widths[i];});}
  offset+=count;}
+ // Drawn after every row so the next row cannot cover the label.
+ for(const b of bubbles){c.fillStyle=ITM.gold;c.fillRect(b.x,b.y-2,b.w,4);}
  if(footer){
   c.drawImage(responsibleBand,footer.x,footer.y,footer.width,footer.height);
  }
+ // Page number small, bottom right, level with the responsible gambling band.
+ if(head.pageLabel){c.font=measureFont(700,nameSize*.45);c.letterSpacing='0px';c.textAlign='right';c.textBaseline='middle';c.fillStyle='#9AA0A6';c.fillText(head.pageLabel,l.width-40,footer?footer.y+footer.height/2:imageHeight-24);}
+ return canvas;
+}
+// V51 social formats: exact 1080 × 1080 (Instagram / Facebook post) and 1080 × 1920 (Story) pages, one column,
+// same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
+// Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
+export const SOCIAL_FORMATS={
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:15,maxRow:60},
+ story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60}
+};
+export function socialPages(rows,format){const out=[];for(let i=0;i<rows.length;i+=format.perPage)out.push(rows.slice(i,i+format.perPage));return out;}
+export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,branding={},format=SOCIAL_FORMATS.square){
+ if(!rows.length)throw Error('There are no qualified players.');
+ if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
+ if(!(logo?.naturalWidth>0)||!(logo?.naturalHeight>0))throw Error('The Genting logo could not be loaded. The JPEG was not generated.');
+ if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
+ if(!validTournamentTime(tournament.time))throw Error('Enter a time from 00:00 to 23:59 (HH:mm).');
+ if(rows.length>format.perPage)throw Error('Too many players for one page in this format.');
+ if(responsibleBand&&!(responsibleBand.naturalWidth>0&&responsibleBand.naturalHeight>0))throw Error('The responsible gambling image could not be loaded.');
+ const W=format.width,H=format.height,M=40,page=branding.page,all=page?.measureRows||rows;
+ canvas.width=W;canvas.height=H;
+ const c=canvas.getContext('2d');if(!c)throw Error('The image exceeds the browser’s capacity.');
+ c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
+ c.fillStyle='#202124';c.fillRect(0,0,W,H);
+ const put=(value,x,y,{size,weight=400,colour='#F2F2F4',align='center',max=W-2*M,arial=false,tracking=0})=>{
+  c.font=arial?(weight>=600?'bold ':'')+size+'px Arial':weight+' '+size+'px Montserrat';
+  c.letterSpacing=tracking?tracking*size+'px':'0px';c.textAlign=align;c.textBaseline='middle';c.fillStyle=colour;c.fillText(value,x,y,max);
+ };
+ const fit=(value,size,weight,max)=>{c.font=weight+' '+size+'px Montserrat';const w=c.measureText(value).width;return w>max?size*max/w:size;};
+ // Frame: the same gap above the header, between the header and the table, between the table and the band and
+ // under the band. The Post uses the whole image; the Story keeps 250 px clear at the top and bottom for Instagram.
+ const zoneW=270,zoneH=Math.round(zoneW*620/1440),head=headerText(tournament,all,page),middleW=W-2*M-2*zoneW-32;
+ let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=titleLines(c,head,middleW);
+ while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=titleLines(c,head,middleW);}
+ if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
+ const isize=head.info?fit(head.info,20,600,middleW):0,sfit=fit(head.sub.map(s=>s.text).join('  ·  '),20,600,middleW),efit=head.extra.length?fit(head.extra.map(s=>s.text).join('  ·  '),20,600,middleW):sfit,ssize=Math.min(sfit,efit),esize=head.extra.length?ssize:0;
+ const subRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+ssize*.6,visTop=tsize*.56-tsize*CAP,extraRel=subRel+ssize*.6+6+esize*.6,blockH=(head.extra.length?extraRel+esize*DESC:subRel+ssize*DESC)-visTop,rowHead=Math.max(zoneH,blockH);
+ const bb=bigBlind(tournament.bb),rankW=78,flightW=bb?140:160,chipW=bb?260:180,nameX=M+rankW+10,flightX=W-M-chipW-flightW,chipX=W-M-14,nameMax=flightX-nameX-16;
+ let band=null;
+ if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44,bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
+ const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
+ const rowH=Math.min(format.maxRow,Math.floor((area-rowHead-bandH-gaps*24-fixed)/format.perPage)),size=Math.max(18,Math.min(28,Math.round(rowH*.5)));
+ const gap=(area-rowHead-bandH-fixed-format.perPage*rowH)/gaps;
+ let y=format.top+gap;
+ const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight},g=fitInZone(gentingCrop,{x:M,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'left');
+ c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,g.x,g.y,g.w,g.h);
+ const brandImage=branding.tournamentLogo?.image;
+ if(brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0){const crop=branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight},b=fitInZone(crop,{x:W-M-zoneW,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'right');c.drawImage(brandImage,crop.x,crop.y,crop.w,crop.h,b.x,b.y,b.w,b.h);}
+ let my=y+(rowHead-blockH)/2-visTop;
+ for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
+ if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
+ drawSegments(c,head.sub,W/2,my+6+ssize*.6,'600 '+ssize+'px Montserrat',middleW);
+ if(head.extra.length)drawSegments(c,head.extra,W/2,my+6+ssize*1.2+6+esize*.6,'600 '+esize+'px Montserrat',middleW);
+ y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
+ put('RANK',M+rankW-12,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});put('PLAYER NAME',nameX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});
+ put('QUALIFIED FROM',flightX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});put('CHIP COUNT',chipX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});
+ y+=32;
+ if(band)band.y=y+format.perPage*rowH-3+gap;
+ const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
+ rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
+  c.fillStyle=leader?LEADER.fill:j%2?'#292A2D':'#202124';c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=TABLE_EDGE;c.fillRect(M,top+rowH-5,W-2*M,2);}
+  if(leader){const b=3,h=rowH-3;c.fillStyle=LEADER.gold;c.fillRect(M,top,W-2*M,b);c.fillRect(M,top+h-b,W-2*M,b);c.fillRect(M,top,b,h);c.fillRect(W-M-b,top,b,h);}
+  const strong=leader?LEADER.text:'#fff';
+  const medal=MEDALS[Number(r.rank)];if(medal){c.font='bold '+size+'px Arial';drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
+  put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
+  put(String(r.name),nameX,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax});
+  put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:'#fff',align:'left',max:flightW-10});
+  put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
+  if(bb){c.font=size+'px Arial';const used=c.measureText(r.chips.toLocaleString('en-GB')).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
+  if(r===bubbleRow)bubble=top+rowH-1.5;
+ });
+ if(bubble!==null){c.fillStyle=ITM.gold;c.fillRect(M,bubble-2,W-2*M,4);}
+ if(band)c.drawImage(responsibleBand,band.x,band.y,band.w,band.h);
+ if(head.pageLabel)put(head.pageLabel,W-M,band?band.y+band.h/2:H-format.bottom-gap/2,{size:20,weight:700,colour:'#9AA0A6',align:'right'});
  return canvas;
 }
