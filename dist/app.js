@@ -1,5 +1,5 @@
 import {supportsSaveAs,saveJpegAs} from './jpeg-save-as.js';
-import {displayRows,loadedFlights,readyMessage,uniqueFilename} from './view-mode.js';
+import {displayRows,loadedFlights,readyMessage,uniqueFilename,PRESET_KEY,makePreset,parsePresets,upsertPreset,removePreset} from './view-mode.js';
 import {mountClockPicker} from './clock-picker.js';
 import {serializeSessionBackup,parseSessionBackup,backupSummary,backupLimit,HISTORY_INDEX_KEY,historyKey,historyMeta,upsertHistory,removeHistory} from './session-backup.js';
 import {createJpegArtifact,retireJpegArtifact,shareJpegArtifact,jpegDataUrl} from './jpeg-actions.js';
@@ -240,3 +240,12 @@ async function deleteHistory(entry){
  try{const next=removeHistory(historyIndex,entry.id);await historyStore('put',HISTORY_INDEX_KEY,next);await historyStore('delete',historyKey(entry.id));historyIndex=next;renderHistory();historyStatus('Removed “'+(entry.name||'Untitled tournament')+'” from the tournament history.');}catch(error){historyStatus(error.message);}
 }
 var historyReady=true;loadHistory();
+// ---------- V51 series presets.
+let presets=[];try{presets=parsePresets(localStorage.getItem(PRESET_KEY));}catch{presets=[];}
+const presetSelect=$('#preset-select'),presetStatus=message=>{$('#preset-status').textContent=message;};
+function savePresets(){try{localStorage.setItem(PRESET_KEY,JSON.stringify(presets));return true;}catch{presetStatus('Presets could not be saved in this browser.');return false;}}
+function renderPresets(selected=presetSelect.value){const keep=document.createElement('option');keep.value='';keep.textContent=presets.length?'Choose a series…':'No presets yet';presetSelect.replaceChildren(keep,...presets.map(p=>{const o=document.createElement('option');o.value=p.label;o.textContent=p.label;return o;}));presetSelect.value=presets.some(p=>p.label===selected)?selected:'';$('#preset-delete').disabled=!presetSelect.value;}
+presetSelect.onchange=()=>{const preset=presets.find(p=>p.label===presetSelect.value);$('#preset-delete').disabled=!preset;if(!preset)return;const v=preset.values;tournamentName.value=v.name;flightsInput.value=v.flights;bigBlindInput.value=v.bb;syncTimeSelectors(v.time);if(v.format&&[...exportFormat.options].some(o=>o.value===v.format)){exportFormat.value=v.format;exportFormat.dispatchEvent(new Event('change'));}saveTournamentDetails();presetStatus(`Filled from “${preset.label}”: name, time, flights, big blind and image format. Date and prizes stay as they are.`);};
+$('#preset-save').onclick=()=>{const suggested=presetSelect.value||tournamentName.value.trim();const label=prompt('Preset name (for example BPS or Monday Redtooth):',suggested);if(label===null)return;try{const preset=makePreset(label,{name:tournamentName.value,time:tournamentTime.value,flights:flightsInput.value,bb:bigBlindInput.value,format:exportFormat.value});const existed=presets.some(p=>p.label.toLocaleLowerCase()===preset.label.toLocaleLowerCase());presets=upsertPreset(presets,preset);if(savePresets()){renderPresets(preset.label);presetStatus((existed?'Updated':'Saved')+` preset “${preset.label}”.`);}}catch(error){presetStatus(error.message);}};
+$('#preset-delete').onclick=()=>{const label=presetSelect.value;if(!label)return;if(!confirm(`Delete the preset “${label}”? The current details stay as they are.`))return;presets=removePreset(presets,label);if(savePresets()){renderPresets('');presetStatus(`Deleted preset “${label}”.`);}};
+renderPresets('');

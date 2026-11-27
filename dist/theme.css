@@ -157,3 +157,7 @@ button,.actions a,select,#time-picker-trigger{min-height:44px}
 .history-list strong{overflow-wrap:anywhere}
 .history-list small{color:#9aa0a6;font-size:12px}
 .history-list button.danger{background:#cc1428;border-color:#cc1428;color:#fff}
+header .tournament-fields .preset-row{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 12px;padding-bottom:12px;border-bottom:1px solid #3c4043}
+header .tournament-fields .preset-row label{flex:1 1 220px;max-width:340px}
+header .tournament-fields .preset-row button{min-height:44px}
+header .tournament-fields .preset-row .field-note{flex:1 1 100%}
