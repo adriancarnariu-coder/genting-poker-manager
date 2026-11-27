@@ -499,7 +499,24 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  put(info,W/2,my+8+isize*.6,{size:isize,weight:600,colour:P.grey,max:middleW});
  y+=rowHead+gap;
  const label={size:14,weight:700,colour:P.grey,tracking:.1};
- put(statusText,M,y+10,{...label,align:'left'});if(remainingText){const used=c.measureText(statusText).width;put(remainingText,M+used,y+10,{size:12,weight:600,colour:P.dim,tracking:.04,align:'left'});}if(pageText)put(pageText,W-M,y+10,{...label,size:13,weight:600,colour:P.dim,align:'right'});y+=labelRow;
+ // Three zones on one row: status on the left, prize pool centred on the poster, PAGE X OF Y on the right.
+ const ly=y+10,pageStyle={...label,size:13,weight:600,colour:P.dim,align:'right'};
+ put(statusText,M,ly,{...label,align:'left'});let leftEnd=M+c.measureText(statusText).width;
+ if(remainingText){put(remainingText,leftEnd,ly,{size:12,weight:600,colour:P.dim,tracking:.04,align:'left'});leftEnd+=c.measureText(remainingText).width;}
+ let rightStart=W-M;if(pageText){put(pageText,W-M,ly,pageStyle);rightStart-=c.measureText(pageText).width;}
+ // Centre: provisional total in warm grey with a small open-circle "loading" mark (drawn, not a font glyph); final:
+ // PRIZE POOL and the confirmed amount in BPS gold, at least the guarantee. Empty when no prize pool is entered.
+ const poolValue=prizePool(tournament.prizePool)?Number(String(tournament.prizePool).replace(/[£,\s]/g,'')):0,gtdValue=prizePool(tournament.gtd)?Number(String(tournament.gtd).replace(/[£,\s]/g,'')):0;
+ if(poolValue>0){const room=Math.max(0,2*Math.min(W/2-leftEnd,rightStart-W/2)-32);
+  if(head.final){const amountText=prizePool(String(Math.max(poolValue,gtdValue))),lab={size:13,weight:700,colour:P.gold,tracking:.1},amt={size:17,weight:800,colour:P.gold};
+   c.font=lab.weight+' '+lab.size+'px Montserrat';c.letterSpacing=lab.tracking*lab.size+'px';const lw=c.measureText('PRIZE POOL').width;c.font=amt.weight+' '+amt.size+'px Montserrat';c.letterSpacing='0px';const aw=c.measureText(amountText).width,total=lw+10+aw,k=total>room?room/total:1;
+   const x0=W/2-total*k/2;put('PRIZE POOL',x0,ly,{...lab,align:'left',max:lw*k});put(amountText,x0+(lw+10)*k,ly,{...amt,align:'left',max:aw*k});}
+  else{const amountText=prizePool(String(poolValue)),amt={size:16,weight:700,colour:P.grey},rad=6;c.font=amt.weight+' '+amt.size+'px Montserrat';c.letterSpacing='0px';
+   const aw=c.measureText(amountText).width,total=aw+8+2*rad,k=total>room?room/total:1,x0=W/2-total*k/2;
+   put(amountText,x0,ly,{...amt,align:'left',max:aw*k});const cx=x0+(aw+8)*k+rad,start=-Math.PI/2;
+   c.beginPath();c.arc(cx,ly,rad,start+.35*Math.PI,start+2*Math.PI);c.strokeStyle=P.grey;c.lineWidth=2;c.lineCap='round';c.stroke();}
+ }
+ y+=labelRow;
  c.fillStyle=P.rule;c.fillRect(M,y,W-2*M,1);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:P.grey};
  put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});

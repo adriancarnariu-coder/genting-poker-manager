@@ -5,10 +5,10 @@ import {drawSocial,socialPages,pageSizes,SOCIAL_FORMATS,DAY_GOLD,BPS_PALETTE} fr
 const genting={naturalWidth:1440,naturalHeight:620},band={naturalWidth:2000,naturalHeight:107};
 const players=n=>Array.from({length:n},(_,i)=>({rank:i+1,name:'Player '+String(i+1).padStart(2,'0'),flight:'A',chips:(n-i)*1000}));
 function draw(rows,format,tournament={name:'BPS Main Event',date:'2026-11-24',time:'18:15'},page){
- const text=[],rects=[],images=[];
- const c={fillRect(x,y,w,h){rects.push({x,y,w,h,colour:this.fillStyle});},drawImage(...a){images.push(a);},save(){},restore(){},measureText(v){return {width:String(v).length*parseFloat(this.font.match(/[\d.]+px/)[0])*.55};},fillText(value,x,y,max){text.push({value:String(value),x,y,max,font:this.font});}};
+ const text=[],rects=[],images=[],arcs=[];
+ const c={fillRect(x,y,w,h){rects.push({x,y,w,h,colour:this.fillStyle});},drawImage(...a){images.push(a);},save(){},restore(){},beginPath(){},arc(...a){arcs.push(a);},stroke(){},measureText(v){return {width:String(v).length*parseFloat(this.font.match(/[\d.]+px/)[0])*.55};},fillText(value,x,y,max){text.push({value:String(value),x,y,max,font:this.font});}};
  const canvas={getContext:()=>c};drawSocial(canvas,rows,genting,tournament,band,{page},format);
- return {canvas,text,rects,images};
+ return {canvas,text,rects,images,arcs};
 }
 const pageSet=(all,format)=>{const pages=socialPages(all,format);return pages.map((rows,i)=>({rows,page:pages.length>1?{number:i+1,total:pages.length,totalPlayers:all.length,measureRows:all}:undefined}));};
 
@@ -158,7 +158,7 @@ test('BPS minimal header: name, DAY 2, "date · time · N qualified"; no prize, 
  const f=SOCIAL_FORMATS.square,rows=players(12).map((p,i)=>({...p,flight:'ABCDEFGH'[i%8]}));
  const r=draw(rows,f,{name:'BPS200 Main Event',date:'2026-11-29',time:'16:30',flights:'8',prizePool:'17585',gtd:'100000',firstPrize:'4000',minCash:'150',day2Start:'Sat 29 Nov'});
  assert(r.text.some(t=>t.value==='BPS200 MAIN EVENT'));assert(r.text.some(t=>t.value==='DAY 2'));assert(r.text.some(t=>t.value==='29 Nov · 16:30 · 12 qualified'));
- assert(!r.text.some(t=>/£|GTD|collected|left|complete|1st place|min cash|STARTS/i.test(t.value)),'no prize, guarantee, flights or Day 2 start');
+ assert(!r.text.some(t=>/GTD|collected|left|complete|1st place|min cash|STARTS/i.test(t.value)),'no guarantee, flights or Day 2 start in the header');assert.deepEqual(r.text.filter(t=>t.value.includes('£')).map(t=>t.value),['£100,000'],'only the prize pool in the status row');
  assert(r.text.some(t=>t.value==='FINAL CHIP COUNTS'),'every flight played');
  assert(draw(rows,f,{name:'X',time:''}).text.some(t=>t.value==='12 qualified'),'empty date and time left out with their separators');
  assert(draw(rows,f,{name:'X',date:'2026-11-29',time:''}).text.some(t=>t.value==='29 Nov · 12 qualified'));
@@ -174,4 +174,20 @@ test('status row: N flights remaining (1 flight singular), FINAL CHIP COUNTS whe
  const unset=draw(mk(10,'AB'),f,{name:'BPS200'});assert(unset.text.some(t=>t.value==='CHIP COUNTS SO FAR'));assert(!unset.text.some(t=>/remaining/.test(t.value)),'no count without the number of flights');
  const all=mk(45,'ABCD'),pages=pageSet(all,f);
  for(const {rows,page} of pages){const r=draw(rows.map(x=>({...x})),f,{name:'BPS200',flights:'8'},page);assert(r.text.some(t=>t.value==='  ·  4 flights remaining'),'page '+page.number);assert(r.text.some(t=>t.value===`PAGE ${page.number} OF 3`));}
+});
+
+test('status row in three zones: provisional total with a loading mark, final PRIZE POOL in gold, nothing in the centre without an amount',()=>{
+ const f=SOCIAL_FORMATS.square,mk=(n,letters)=>players(n).map((p,i)=>({...p,flight:letters[i%letters.length]}));
+ const open=draw(mk(10,'AB'),f,{name:'BPS200',flights:'8',prizePool:'17585',gtd:'100000'});
+ const amount=open.text.find(t=>t.value==='£17,585');assert(amount,'provisional total');assert.equal(open.arcs.length,1,'open-circle mark drawn');assert(!open.text.some(t=>t.value==='PRIZE POOL'));
+ const status=open.text.find(t=>t.value==='CHIP COUNTS SO FAR');assert(Math.abs(amount.y-status.y)<1,'same row');
+ const done=draw(mk(10,'AB'),f,{name:'BPS200',flights:'2',prizePool:'17585',gtd:'100000'});
+ assert(done.text.some(t=>t.value==='PRIZE POOL'));assert(done.text.some(t=>t.value==='£100,000'),'final amount topped up to the guarantee');assert.equal(done.arcs.length,0,'no loading mark when final');assert(!done.text.some(t=>/remaining/.test(t.value)));
+ assert(draw(mk(10,'AB'),f,{name:'BPS200',flights:'2',prizePool:'120000',gtd:'100000'}).text.some(t=>t.value==='£120,000'),'above the guarantee: the collected amount');
+ const none=draw(mk(10,'AB'),f,{name:'BPS200',flights:'8'});assert(!none.text.some(t=>/£|PRIZE POOL/.test(t.value)));assert.equal(none.arcs.length,0);
+ // No overlap: left text ends before the centre block, the centre block ends before PAGE X OF Y.
+ const all=mk(45,'ABCD'),pages=pageSet(all,f),{rows,page}=pages[0],r=draw(rows,f,{name:'BPS200',flights:'8',prizePool:'17585'},page);
+ const width=t=>t.value.length*parseFloat(t.font.match(/[\d.]+px/)[0])*.55;
+ const remaining=r.text.find(t=>/remaining/.test(t.value)),centre=r.text.find(t=>t.value==='£17,585'),pageLabel=r.text.find(t=>/^PAGE /.test(t.value));
+ assert(remaining.x+width(remaining)<centre.x,'left zone clear of the centre');assert(r.arcs[0][0]+8<pageLabel.x-width(pageLabel),'centre clear of the page label');
 });
