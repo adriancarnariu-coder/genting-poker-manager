@@ -532,9 +532,10 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // as the wider of the two, ending 14 px before the BB values; names stop 18 px before it.
  c.font=TABLE_FONT(15,700);c.letterSpacing='0px';const headW=c.measureText('FLIGHT').width;c.font=TABLE_FONT(size);const flightW=Math.ceil(Math.max(headW,c.measureText('1W').width)),flightX=flightEnd-flightW,flightMid=flightX+flightW/2,nameMax=flightX-nameX-18;
  put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('FLIGHT',flightMid,y+14,{...headStyle,align:'center'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
- // BB heading: only "BB", in the same font and size as the values under it (one step bolder), right-aligned on
- // the same edge as their last digit. The starting blind is not shown; it is only used to work out the BB values.
- if(bb)put('BB',bbX,y+14,{size:Math.round(size*BB_STYLE.scale),weight:600,colour:P.grey,align:'right'});
+ // BB heading: only "BB", in the same font and size as the values under it (one step bolder), centred over the
+ // column of values (right-aligned digits, width of the widest value in the whole export, so every page matches).
+ // The starting blind is not shown; it is only used to work out the BB values.
+ if(bb){const bsize=Math.round(size*BB_STYLE.scale);c.font=TABLE_FONT(bsize);c.letterSpacing='0px';const valuesW=Math.max(...all.map(r=>c.measureText(bbCount(r.chips,bb)).width));put('BB',bbX-valuesW/2,y+14,{size:bsize,weight:600,colour:P.grey,align:'center'});}
  y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
