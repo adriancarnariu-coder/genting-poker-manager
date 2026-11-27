@@ -482,7 +482,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // - number of flights not set: CHIP COUNTS SO FAR without a count. PAGE 1 OF 6 on the right.
  const left=head.flights.length?flightsToPlay(flightCount(tournament.flights),all).length:0,statusText=head.final?'FINAL CHIP COUNTS':'CHIP COUNTS SO FAR',remainingText=left?`  ·  ${left} flight${left===1?'':'s'} remaining`:'',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:'',labelRow=30;
  // Columns: rank number / medal (no RANK label), flag, PLAYER, BB (when a Day 2 big blind is set), CHIPS.
- const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,nameMax=(bb?bbX-bbW:chipX-chipW)-nameX-16;
+ // The flight each player qualified from ("1C") sits after the name, before BB, with no column heading.
+ const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,flightX=(bb?bbX-bbW:chipX-chipW)-56,nameMax=flightX-nameX-16;
  let band=null;
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=(format.band||44)*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
  const area=H-format.top-format.bottom,fixed=41+labelRow,bandH=band?band.h:0,gaps=band?4:3;
@@ -541,6 +542,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
   if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
   put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:P.ivory,align:'left',max:nameMax-fSpace-fGap});
+  const flightLetter=normalizeFlight(r.flight);if(flightLetter)put('1'+flightLetter,flightX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:P.grey,align:'left',max:50});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
   if(bb)put(bbCount(r.chips,bb),bbX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:P.grey,align:'right',max:bbW});
   if(r===bubbleRow)bubble=top+rowH-1.5;

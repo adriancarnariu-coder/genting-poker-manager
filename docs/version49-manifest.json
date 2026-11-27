@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "5d7ce2be6761eac50d6f1cb8769d1004d013c8eaff8a40be35b8a915a43d836c",
-      "bytes": 62980,
+      "sha256": "3aadb4214498e66851b0ecfe610dc92db86ebbcb62a4f9051239007976151f0e",
+      "bytes": 63288,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -335,6 +335,13 @@
     {
       "version": "V52 BB heading",
       "description": "BB column heading shows only 'BB' (no 'Start: 6,000'), in the same font and size as the BB values under it, one weight bolder (600 vs 500), right-aligned on the same edge as their last digit (measured on the JPEG: 826-827 px for heading and values) and level with PLAYER and CHIPS on every page. The Day 2 big blind stays in the app and is still used to work out the BB values.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 qualified-from flight",
+      "description": "Each row shows the flight the player qualified from (e.g. 1C) after the name and before BB, in warm grey at the BB value size, with no column heading. Names keep a 16 px gap before it.",
       "files": [
         "dist/model.js"
       ]
