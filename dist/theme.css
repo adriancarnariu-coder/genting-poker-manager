@@ -119,3 +119,35 @@ header .tournament-fields .field-note:empty{display:none}
 .export-summary th{font-size:12px;color:#9aa0a6;font-weight:600}
 .export-summary tfoot td{font-weight:700;border-bottom:0;color:#f1f3f4}
 .export-summary p{margin:8px 0 0;font-size:13px;color:#bdc1c6}
+/* V51 phone pass. */
+.export-summary table{min-width:0;table-layout:auto}
+.upload-picker input[type=file]{min-height:56px}
+.upload-picker input::file-selector-button{min-height:44px;padding:12px 18px}
+.upload-panel.drag-over{outline:2px dashed #cc1428;outline-offset:6px}
+.drop-hint{display:none;font-size:12px;color:#9aa0a6}
+@media(hover:hover) and (pointer:fine){.drop-hint{display:block}}
+input[type=checkbox]{width:22px;height:22px;accent-color:#cc1428;flex:0 0 auto}
+label:has(>input[type=checkbox]),.tournament-fields .logo-scope{min-height:44px;display:flex;align-items:center;gap:10px}
+summary{padding-block:12px;cursor:pointer}
+@media(max-width:700px){
+button,.actions a,select,#time-picker-trigger{min-height:44px}
+}
+/* Players as cards on phones instead of a wide table that scrolls sideways. */
+@media(max-width:600px){
+.table-wrap{overflow-x:hidden;overflow-y:auto}
+.table-wrap table{min-width:0;table-layout:auto}
+.table-wrap colgroup,.table-wrap thead tr:not(.filters){display:none}
+.table-wrap thead,.table-wrap tbody{display:block}
+.table-wrap thead tr.filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 0 4px}
+.table-wrap thead tr.filters td{display:block;padding:0;border:0}
+.table-wrap thead tr.filters td:first-child,.table-wrap thead tr.filters td:nth-child(2){grid-column:1/-1}
+.table-wrap thead tr.filters input{width:100%;min-height:44px}
+.table-wrap tbody tr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px;row-gap:2px;align-items:baseline;padding:10px 12px;margin-top:8px;border:1px solid #3c4043;border-radius:8px}
+.table-wrap tbody td{display:block;padding:0;border:0;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.table-wrap tbody td:nth-child(1){grid-row:1/span 2;align-self:center;font-weight:700;min-width:28px;text-align:right}
+.table-wrap tbody td:nth-child(2){grid-column:2;font-weight:700}
+.table-wrap tbody td:nth-child(3){grid-column:2;font-size:12px;color:#9aa0a6}
+.table-wrap tbody td:nth-child(4){grid-column:3;grid-row:2;font-size:12px;color:#9aa0a6;text-align:right}
+.table-wrap tbody td:nth-child(5){grid-column:3;grid-row:1;font-weight:700;text-align:right}
+.table-wrap tbody td[colspan]{grid-column:1/-1;grid-row:auto;text-align:center;font-weight:400}
+}
