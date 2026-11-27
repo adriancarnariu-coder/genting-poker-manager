@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "423d61b5fd4439b6a8e362031c3769d9d9392d0ef0f5761bd8cae792a976cdf4",
-      "bytes": 62261,
+      "sha256": "ec24abcfc753dc2df2586c5cbe41e15a31d055a964de22e983b66c4d0b447402",
+      "bytes": 62947,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -321,6 +321,13 @@
     {
       "version": "V52 provisional prize pool label",
       "description": "Provisional centre of the status row now reads 'PRIZE POOL £17,585' in warm grey followed by the drawn open-circle loading mark; final stays 'PRIZE POOL £100,000' in BPS gold. Test for 6 flights (1A-1F): A-C imported shows CHIP COUNTS SO FAR · 3 flights remaining, A-F imported shows FINAL CHIP COUNTS.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 red rule and centred header",
+      "description": "Red rule (#cc1428, 2 px) back above the table, matching the Genting logo. Header text (name, DAY 2, date · time · qualified) centred in the real space between the drawn Genting and tournament logos instead of on the page centre (measured on the JPEG: 58 px to the Genting logo, 57 px to the BPS logo box) and level with the logos vertically (block moved up 2 px; logos and text both centred at y 84.5 on the 29-player post).",
       "files": [
         "dist/model.js"
       ]

@@ -29,7 +29,7 @@ test('every player of every page is drawn, inside the image and above the respon
    const bandTop=bandImage[2];for(const t of names)assert(t.y<bandTop-10&&t.y>0,`n=${n}`);
    const edge=f.key==='story'?f.height-f.bottom:f.height,rowBottoms=r.rects.filter(x=>x.x===40&&x.h<100&&['#202124','#292A2D','#33301F'].includes(x.colour)).map(x=>x.y+x.h);
    assert(bandImage[2]+bandImage[4]<=edge+1,'band inside the image and above the Story safe zone');
-   if(rows.length===f.perPage&&(!page||page.number===1)){const tableEnd=Math.max(...rowBottoms),above=bandImage[2]-tableEnd,below=edge-(bandImage[2]+bandImage[4]);assert(Math.abs(above-below)<=1,`equal gaps ${above} / ${below}`);assert(above>=23);const red=r.rects.find(x=>x.colour==='#7B6237'&&x.h===1);assert(red.y>0);}
+   if(rows.length===f.perPage&&(!page||page.number===1)){const tableEnd=Math.max(...rowBottoms),above=bandImage[2]-tableEnd,below=edge-(bandImage[2]+bandImage[4]);assert(Math.abs(above-below)<=1,`equal gaps ${above} / ${below}`);assert(above>=23);const red=r.rects.find(x=>x.colour==='#cc1428'&&x.h===2);assert(red.y>0);}
   }
  }
 });
@@ -131,7 +131,7 @@ test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label),
   assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');assert.equal(player.x,name.x,'PLAYER starts where the names start');
   assert(r.text.some(t=>t.value==='DAY 2'),'DAY 2 on its own line');assert(r.text.some(t=>t.value==='BPS200 MAIN EVENT'),'short title in capitals');
   assert(r.text.some(t=>t.value==='Start: 2,000'),'starting blind by the BB heading');
-  layout.push([player.y,chips.x,r.rects.find(x=>x.colour==='#7B6237'&&x.h===1).y]);
+  layout.push([player.y,chips.x,r.rects.find(x=>x.colour==='#cc1428'&&x.h===2).y]);
  });
  assert.deepEqual(layout[0],layout[1],'same heading and column positions on every page');
  const r=draw(pages[0].rows,f,{time:'18:15'},pages[0].page);
@@ -197,4 +197,13 @@ test('6 flights selected (1A-1F): A-C imported -> CHIP COUNTS SO FAR · 3 flight
  const abc=draw(mk('ABC'),f,t);assert(abc.text.some(x=>x.value==='CHIP COUNTS SO FAR'));assert(abc.text.some(x=>x.value==='  ·  3 flights remaining'));assert.equal(abc.arcs.length,1);
  const abcde=draw(mk('ABCDE'),f,t);assert(abcde.text.some(x=>x.value==='  ·  1 flight remaining'));
  const all=draw(mk('ABCDEF'),f,t);assert(all.text.some(x=>x.value==='FINAL CHIP COUNTS'));assert(!all.text.some(x=>/remaining|SO FAR/.test(x.value)));assert.equal(all.arcs.length,0);assert(all.text.some(x=>x.value==='£100,000'));
+});
+
+test('header text centred in the space between the Genting and tournament logos; red rule above the table',()=>{
+ const f=SOCIAL_FORMATS.square,bps={naturalWidth:500,naturalHeight:300};
+ const text=[],images=[],rects=[];const c={fillRect(x,y,w,h){rects.push({x,y,w,h,colour:this.fillStyle});},drawImage(...a){images.push(a);},save(){},restore(){},beginPath(){},arc(){},stroke(){},measureText(v){return {width:String(v).length*parseFloat(this.font.match(/[\d.]+px/)[0])*.55};},fillText(value,x,y){text.push({value:String(value),x,y});}};
+ drawSocial({getContext:()=>c},players(12),genting,{name:'BPS200 Main Event',date:'2026-11-29',time:'16:30'},band,{tournamentLogo:{image:bps}},f);
+ const g=images.find(a=>a[0]===genting),b=images.find(a=>a[0]===bps),left=g[5]+g[7],right=b[5],mid=(left+right)/2;
+ for(const v of ['BPS200 MAIN EVENT','DAY 2','29 Nov · 16:30 · 12 qualified'])assert(Math.abs(text.find(t=>t.value===v).x-mid)<1e-6,v+' centred between the logos');
+ assert(rects.some(x=>x.colour==='#cc1428'&&x.h===2),'red rule above the table');
 });

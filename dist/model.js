@@ -460,7 +460,12 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  const fit=(value,size,weight,max)=>{c.font=weight+' '+size+'px Montserrat';const w=c.measureText(value).width;return w>max?size*max/w:size;};
  // Frame: the same gap above the header, between the header and the table, between the table and the band and
  // under the band. The Post uses the whole image; the Story keeps 250 px clear at the top and bottom for Instagram.
- const zoneW=270,zoneH=Math.round(zoneW*620/1440),head=headerText(tournament,all,page),middleW=W-2*M-2*zoneW-32;
+ const zoneW=270,zoneH=Math.round(zoneW*620/1440),head=headerText(tournament,all,page);
+ // The header text sits in the real space between the drawn Genting and tournament logos: centred on that gap,
+ // 24 px clear of each logo (without a tournament logo the space mirrors the Genting side).
+ const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight},gBox=fitInZone(gentingCrop,{x:M,y:0,w:zoneW,h:zoneH},'left');
+ const brandImage=branding.tournamentLogo?.image,brandCrop=brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0?branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight}:null,bBox=brandCrop?fitInZone(brandCrop,{x:W-M-zoneW,y:0,w:zoneW,h:zoneH},'right'):null;
+ const textLeft=gBox.x+gBox.w+24,textRight=(bBox?bBox.x:W-gBox.x-gBox.w)-24,middleW=textRight-textLeft,cx=(textLeft+textRight)/2;
  // Three header lines between the logos: tournament name (ivory, capitals), DAY 2 (BPS gold, letter-spaced), then
  // "29 Nov · 16:30 · 29 qualified" in warm grey (empty parts and their separators left out).
  const titleText=(head.name||'Leaderboard').toLocaleUpperCase('en-GB'),dayGold=branding.dayColour||P.gold;
@@ -489,14 +494,14 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  const showFlags=branding.flags!==false&&all.some(r=>countryCode(r.nationality)),fw=Math.round(size*1.15),fh=Math.round(fw*2/3),fGap=Math.max(0,Math.round(size*.3)-6),fSpace=showFlags?fw+10:0;
  const gap=(area-rowHead-bandH-fixed-slots*rowH)/gaps;
  let y=format.top+gap;
- const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight},g=fitInZone(gentingCrop,{x:M,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'left');
+ const g=fitInZone(gentingCrop,{x:M,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'left');
  c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,g.x,g.y,g.w,g.h);
- const brandImage=branding.tournamentLogo?.image;
- if(brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0){const crop=branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight},b=fitInZone(crop,{x:W-M-zoneW,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'right');c.drawImage(brandImage,crop.x,crop.y,crop.w,crop.h,b.x,b.y,b.w,b.h);}
- let my=y+(rowHead-blockH)/2-visTop;
- for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
- put('DAY 2',W/2,my+dsize*.62,{size:dsize,weight:800,colour:dayGold,tracking:.14,max:middleW});my+=dsize*1.3;
- put(info,W/2,my+8+isize*.6,{size:isize,weight:600,colour:P.grey,max:middleW});
+ if(brandCrop){const crop=brandCrop,b=fitInZone(crop,{x:W-M-zoneW,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'right');c.drawImage(brandImage,crop.x,crop.y,crop.w,crop.h,b.x,b.y,b.w,b.h);}
+ // Measured on the JPEG: the block reads 2 px low against the logos (descender of "qualified"), so it moves up 2 px.
+ let my=y+(rowHead-blockH)/2-visTop-2;
+ for(const t of tlines){put(t,cx,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
+ put('DAY 2',cx,my+dsize*.62,{size:dsize,weight:800,colour:dayGold,tracking:.14,max:middleW});my+=dsize*1.3;
+ put(info,cx,my+8+isize*.6,{size:isize,weight:600,colour:P.grey,max:middleW});
  y+=rowHead+gap;
  const label={size:14,weight:700,colour:P.grey,tracking:.1};
  // Three zones on one row: status on the left, prize pool centred on the poster, PAGE X OF Y on the right.
@@ -519,7 +524,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
    c.beginPath();c.arc(cx,ly,rad,start+.35*Math.PI,start+2*Math.PI);c.strokeStyle=P.grey;c.lineWidth=2;c.lineCap='round';c.stroke();}
  }
  y+=labelRow;
- c.fillStyle=P.rule;c.fillRect(M,y,W-2*M,1);y+=12;
+ // Red rule above the table, picking up the Genting logo red.
+ c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:P.grey};
  put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
  // BB heading with the Day 2 starting blind next to it, discreet: "Start: 6,000  BB".
