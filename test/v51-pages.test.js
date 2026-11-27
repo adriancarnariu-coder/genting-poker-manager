@@ -244,3 +244,16 @@ test('summary before export: players and chips per flight, full names vs initial
  assert.equal(s.players,3);assert.equal(s.chips,1000);assert.equal(s.fullNames,2);assert.equal(s.initials,1);
  assert.deepEqual(exportSummary([]),{flights:[],players:0,chips:0,fullNames:0,initials:0});
 });
+
+test('flags: country names, demonyms and codes map to flags; shown only with a country, room kept for the flag',async()=>{
+ const {countryCode,FLAG_CODES,drawFlag}=await import('../dist/model.js');
+ for(const [v,code] of [['British','GB'],['GBR','GB'],['England','GB'],['Romania','RO'],['ROU','RO'],['china','CN'],['Brazilian','BR'],['Saint Kitts And Nevis','KN'],['Hong Kong','HK'],['—',''],['',''],['Atlantis','']])assert.equal(countryCode(v),code,v);
+ for(const code of ['GB','RO','CN','IN','AU','JM','IR','VN','MY','PL','UA','BR','TR','MX','SK','TW','NL','HK','IL','LV','MT','PT','KN','NO','GE','IT','NG','ES','FI'])assert(FLAG_CODES.includes(code),code);
+ const ops=[];const c={save(){},restore(){},beginPath(){},rect(){},clip(){},moveTo(){},lineTo(){},closePath(){},arc(){},fill(){ops.push('fill');},fillRect(x,y,w,h){ops.push(this.fillStyle);}};
+ for(const code of FLAG_CODES){ops.length=0;drawFlag(c,code,0,0,30,20);assert(ops.length>=5,code);}
+ const draw=(nat,flags)=>{const text=[],rects=[];const ctx={fillRect(x,y,w,h){rects.push({x,y,w,h,colour:this.fillStyle});},drawImage(){},save(){},restore(){},setTransform(){},measureText(v){return {width:String(v).length*10};},fillText(value,x){text.push({value:String(value),x});}};drawLeaderboard({getContext:()=>ctx},[{rank:1,name:'Ann Lee',nationality:nat,flight:'Day 1A',chips:100}],genting,{},undefined,1,{flags});return {text,rects};};
+ const withFlag=draw('Romania'),noCountry=draw('—'),off=draw('Romania',false);
+ const x=r=>r.text.find(t=>t.value==='Ann Lee').x;
+ assert(x(withFlag)>x(noCountry),'name moves right to make room for the flag');assert.equal(x(off),x(noCountry),'flags can be switched off');
+ assert(withFlag.rects.some(r=>r.colour==='#002B7F'),'Romanian blue drawn');assert(!withFlag.text.some(t=>/Romania|ROU/.test(t.value)),'no country text, only the flag');
+});

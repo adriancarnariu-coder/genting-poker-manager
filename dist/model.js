@@ -242,18 +242,81 @@ export function dayTheme(palette,date){
  ];
  return {day,dayName:DAY_NAMES[day],rowA:'rgba(0,0,0,0)',rowB:accent(.07),paint(c,w,H){c.fillStyle=variants[day](c,w,H);c.fillRect(0,0,w,H);if(day===5||day===6){c.fillStyle=accent(.55);c.fillRect(0,0,w,3);c.fillRect(0,H-3,w,3);}}};
 }
+// V51 country flags next to names. Countries come from the Excel nationality column and are shown only when the
+// player gave GDPR consent (same rule as the full name). Flags are drawn here (no emoji, no downloaded images) in a
+// simplified form that stays recognisable at small sizes. Unknown countries show a small grey code tag.
+const COUNTRY_ALIASES={
+ GB:['british','united kingdom','uk','gb','gbr','great britain','england','english','scotland','scottish','wales','welsh','northern ireland','britain'],
+ IE:['ireland','irish','ie','irl','republic of ireland'],RO:['romania','romanian','ro','rou','rom'],CN:['china','chinese','cn','chn'],IN:['india','indian','in','ind'],
+ AU:['australia','australian','au','aus'],JM:['jamaica','jamaican','jm','jam'],IR:['iran','iranian','ir','irn','persian'],VN:['vietnam','viet nam','vietnamese','vn','vnm'],
+ MY:['malaysia','malaysian','my','mys'],PL:['poland','polish','pl','pol'],UA:['ukraine','ukrainian','ua','ukr'],BR:['brazil','brazilian','br','bra'],TR:['turkey','turkiye','turkish','tr','tur'],
+ MX:['mexico','mexican','mx','mex'],SK:['slovakia','slovak','sk','svk'],TW:['taiwan','taiwanese','tw','twn'],NL:['netherlands','dutch','holland','nl','nld'],HK:['hong kong','hk','hkg'],
+ IL:['israel','israeli','il','isr'],LV:['latvia','latvian','lv','lva'],MT:['malta','maltese','mt','mlt'],PT:['portugal','portuguese','pt','prt'],KN:['saint kitts and nevis','st kitts and nevis','kn','kna'],
+ NO:['norway','norwegian','no','nor'],GE:['georgia','georgian','ge','geo'],IT:['italy','italian','it','ita'],NG:['nigeria','nigerian','ng','nga'],ES:['spain','spanish','es','esp'],FI:['finland','finnish','fi','fin'],
+ FR:['france','french','fr','fra'],DE:['germany','german','de','deu','ger'],BE:['belgium','belgian','be','bel'],AT:['austria','austrian','at','aut'],CH:['switzerland','swiss','ch','che'],
+ SE:['sweden','swedish','se','swe'],DK:['denmark','danish','dk','dnk'],HU:['hungary','hungarian','hu','hun'],BG:['bulgaria','bulgarian','bg','bgr'],LT:['lithuania','lithuanian','lt','ltu'],
+ EE:['estonia','estonian','ee','est'],GR:['greece','greek','gr','grc'],US:['united states','united states of america','usa','us','american'],CA:['canada','canadian','ca','can'],
+ NZ:['new zealand','nz','nzl'],JP:['japan','japanese','jp','jpn'],KR:['south korea','korea','korean','kr','kor'],TH:['thailand','thai','th','tha'],PK:['pakistan','pakistani','pk','pak'],
+ BD:['bangladesh','bangladeshi','bd','bgd'],CZ:['czech republic','czechia','czech','cz','cze'],RU:['russia','russian','ru','rus'],CY:['cyprus','cypriot','cy','cyp'],AL:['albania','albanian','al','alb']
+};
+const COUNTRY_LOOKUP=new Map(Object.entries(COUNTRY_ALIASES).flatMap(([code,names])=>names.map(n=>[n,code])));
+export function countryCode(value){const v=text(value).toLocaleLowerCase().replace(/[._]/g,' ').replace(/\s+/g,' ').trim();if(!v||v==='—')return '';return COUNTRY_LOOKUP.get(v)||'';}
+export const FLAG_CODES=Object.keys(COUNTRY_ALIASES);
+export function drawFlag(c,code,x,y,w,h,outline=true){
+ const R=(col,x0=0,y0=0,w0=1,h0=1)=>{c.fillStyle=col;c.fillRect(x+x0*w,y+y0*h,w0*w,h0*h);};
+ const H=(cols,ws=cols.map(()=>1))=>{const t=ws.reduce((a,b)=>a+b,0);let o=0;cols.forEach((col,i)=>{R(col,0,o/t,1,ws[i]/t);o+=ws[i];});};
+ const V=(cols,ws=cols.map(()=>1))=>{const t=ws.reduce((a,b)=>a+b,0);let o=0;cols.forEach((col,i)=>{R(col,o/t,0,ws[i]/t,1);o+=ws[i];});};
+ const shapes=typeof c.beginPath==='function'&&typeof c.lineTo==='function'&&typeof c.arc==='function'&&typeof c.fill==='function';
+ const poly=(col,pts)=>{if(!shapes)return;c.fillStyle=col;c.beginPath();pts.forEach(([px,py],i)=>i?c.lineTo(x+px*w,y+py*h):c.moveTo(x+px*w,y+py*h));c.closePath();c.fill();};
+ const circ=(col,cx,cy,r)=>{if(!shapes)return;c.fillStyle=col;c.beginPath();c.arc(x+cx*w,y+cy*h,r*h,0,Math.PI*2);c.fill();};
+ const star=(col,cx,cy,r,n=5)=>{const pts=[];for(let i=0;i<n*2;i++){const a=-Math.PI/2+i*Math.PI/n,rr=(i%2?r*.42:r)*h;pts.push([cx+Math.cos(a)*rr/w,cy+Math.sin(a)*rr/h]);}poly(col,pts);};
+ const band=(col,width,x0,y0,x1,y1)=>{const dx=(x1-x0)*w,dy=(y1-y0)*h,len=Math.hypot(dx,dy),nx=-dy/len*width*h/2/w,ny=dx/len*width*h/2/h;poly(col,[[x0+nx,y0+ny],[x1+nx,y1+ny],[x1-nx,y1-ny],[x0-nx,y0-ny]]);};
+ const nordic=(bg,outer,inner,vx=.32,vw=.14,hy=.43,hh=.14)=>{R(bg);if(inner){R(outer,vx-vw*.35,0,vw*1.7,1);R(outer,0,hy-hh*.35,1,hh*1.7);R(inner,vx,0,vw,1);R(inner,0,hy,1,hh);}else{R(outer,vx,0,vw,1);R(outer,0,hy,1,hh);}};
+ const draw={
+  GB(){R('#012169');band('#fff',.32,0,0,1,1);band('#fff',.32,1,0,0,1);band('#C8102E',.11,0,0,1,1);band('#C8102E',.11,1,0,0,1);R('#fff',.389,0,.222,1);R('#fff',0,1/3,1,1/3);R('#C8102E',.433,0,.133,1);R('#C8102E',0,.4,1,.2);},
+  IE(){V(['#169B62','#fff','#FF883E']);},RO(){V(['#002B7F','#FCD116','#CE1126']);},IT(){V(['#009246','#fff','#CE2B37']);},FR(){V(['#0055A4','#fff','#EF4135']);},BE(){V(['#000','#FDDA24','#EF3340']);},
+  NG(){V(['#008751','#fff','#008751']);},MX(){V(['#006847','#fff','#CE1126']);circ('#8C5A2B',.5,.5,.13);},CA(){V(['#D52B1E','#fff','#D52B1E'],[1,2,1]);star('#D52B1E',.5,.52,.3,11);},
+  MT(){V(['#fff','#CF142B']);R('#A0A0A0',.1,.12,.12,.05);R('#A0A0A0',.135,.08,.05,.13);},PT(){V(['#006600','#FF0000'],[2,3]);circ('#FFE000',.4,.5,.22);circ('#FF0000',.4,.5,.13);},
+  PL(){H(['#fff','#DC143C']);},UA(){H(['#0057B7','#FFD700']);},NL(){H(['#AE1C28','#fff','#21468B']);},DE(){H(['#000','#DD0000','#FFCE00']);},LV(){H(['#9E3039','#fff','#9E3039'],[2,1,2]);},
+  ES(){H(['#AA151B','#F1BF00','#AA151B'],[1,2,1]);},HU(){H(['#CE2939','#fff','#477050']);},BG(){H(['#fff','#00966E','#D62612']);},LT(){H(['#FDB913','#006A44','#C1272D']);},EE(){H(['#0072CE','#000','#fff']);},
+  AT(){H(['#ED2939','#fff','#ED2939']);},RU(){H(['#fff','#0039A6','#D52B1E']);},SK(){H(['#fff','#0B4EA2','#EE1C25']);poly('#fff',[[.24,.22],[.46,.22],[.46,.6],[.35,.74],[.24,.6]]);poly('#EE1C25',[[.26,.25],[.44,.25],[.44,.59],[.35,.7],[.26,.59]]);},
+  IN(){H(['#FF9933','#fff','#138808']);circ('#000080',.5,.5,.11);circ('#fff',.5,.5,.075);circ('#000080',.5,.5,.03);},IR(){H(['#239F40','#fff','#DA0000']);circ('#DA0000',.5,.5,.08);},
+  TH(){H(['#A51931','#F4F5F8','#2D2A4A','#F4F5F8','#A51931'],[1,1,2,1,1]);},CN(){R('#DE2910');star('#FFDE00',.17,.27,.17);for(const [sx,sy] of [[.33,.1],[.4,.2],[.4,.35],[.33,.45]])star('#FFDE00',sx,sy,.055);},
+  VN(){R('#DA251D');star('#FFFF00',.5,.52,.32);},TR(){R('#E30A17');circ('#fff',.4,.5,.25);circ('#E30A17',.45,.5,.2);star('#fff',.6,.5,.12);},
+  JM(){R('#009B3A');poly('#000',[[0,0],[.5,.5],[0,1]]);poly('#000',[[1,0],[.5,.5],[1,1]]);band('#FED100',.16,0,0,1,1);band('#FED100',.16,1,0,0,1);},
+  BR(){R('#009C3B');poly('#FFDF00',[[.5,.1],[.92,.5],[.5,.9],[.08,.5]]);circ('#002776',.5,.5,.22);},
+  MY(){for(let i=0;i<14;i++)R(i%2?'#fff':'#CC0001',0,i/14,1,1/14);R('#010066',0,0,.5,8/14);circ('#FFCC00',.2,.29,.2);circ('#010066',.24,.29,.16);star('#FFCC00',.37,.29,.1,14);},
+  TW(){R('#FE0000');R('#000095',0,0,.5,.5);circ('#fff',.25,.25,.12);},HK(){R('#DE2910');for(let i=0;i<5;i++){const a=-Math.PI/2+i*2*Math.PI/5;circ('#fff',.5+Math.cos(a)*.1,.5+Math.sin(a)*.15,.1);}circ('#DE2910',.5,.5,.04);},
+  IL(){R('#fff');R('#0038B8',0,.1,1,.15);R('#0038B8',0,.75,1,.15);poly('#0038B8',[[.5,.3],[.62,.6],[.38,.6]]);poly('#0038B8',[[.5,.7],[.62,.4],[.38,.4]]);poly('#fff',[[.5,.38],[.57,.56],[.43,.56]]);poly('#fff',[[.5,.62],[.57,.44],[.43,.44]]);},
+  KN(){poly('#009E49',[[0,0],[1,0],[0,1]]);poly('#CE1126',[[1,0],[1,1],[0,1]]);band('#FCD116',.42,0,1,1,0);band('#000',.28,0,1,1,0);star('#fff',.38,.6,.08);star('#fff',.62,.4,.08);},
+  NO(){nordic('#BA0C2F','#fff','#00205B',.318,.091,.4375,.125);},FI(){nordic('#fff','#002F6C',null,.278,.166,.364,.272);},SE(){nordic('#006AA7','#FECC02',null,.3125,.125,.4,.2);},DK(){nordic('#C8102E','#fff',null,.32,.12,.43,.14);},
+  GE(){R('#fff');R('#FF0000',.44,0,.12,1);R('#FF0000',0,.42,1,.16);for(const [cx,cy] of [[.22,.2],[.78,.2],[.22,.8],[.78,.8]]){R('#FF0000',cx-.02,cy-.1,.04,.2);R('#FF0000',cx-.06,cy-.03,.12,.06);}},
+  CH(){R('#D52B1E');R('#fff',.44,.22,.12,.56);R('#fff',.33,.42,.34,.16);},GR(){for(let i=0;i<9;i++)R(i%2?'#fff':'#0D5EAF',0,i/9,1,1/9);R('#0D5EAF',0,0,.37,5/9);R('#fff',.15,0,.07,5/9);R('#fff',0,2/9,.37,1/9);},
+  US(){for(let i=0;i<13;i++)R(i%2?'#fff':'#B22234',0,i/13,1,1/13);R('#3C3B6E',0,0,.4,7/13);for(let r=0;r<4;r++)for(let k=0;k<5;k++)circ('#fff',.04+k*.08,.07+r*.13,.025);},
+  AU(){R('#012169');drawFlag(c,'GB',x,y,w/2,h/2,false);star('#fff',.25,.75,.13,7);for(const [sx,sy] of [[.75,.22],[.62,.48],[.75,.82],[.87,.43]])star('#fff',sx,sy,.06,7);},
+  NZ(){R('#012169');drawFlag(c,'GB',x,y,w/2,h/2,false);for(const [sx,sy] of [[.75,.22],[.65,.45],[.83,.42],[.75,.78]])star('#CC142B',sx,sy,.07);},
+  JP(){R('#fff');circ('#BC002D',.5,.5,.3);},KR(){R('#fff');circ('#CD2E3A',.5,.5,.25);poly('#0047A0',Array.from({length:25},(_,i)=>{const a=i/24*Math.PI;return [.5+Math.cos(a)*.25*h/w,.5+Math.sin(a)*.25];}));for(const [bx,by] of [[.18,.2],[.82,.2],[.18,.8],[.82,.8]])R('#000',bx-.04,by-.08,.08,.16);},
+  PK(){R('#01411C');R('#fff',0,0,.25,1);circ('#fff',.62,.5,.27);circ('#01411C',.67,.45,.24);star('#fff',.72,.36,.08);},BD(){R('#006A4E');circ('#F42A41',.45,.5,.3);},
+  CZ(){H(['#fff','#D7141A']);poly('#11457E',[[0,0],[.5,.5],[0,1]]);},CY(){R('#fff');poly('#D57800',[[.3,.45],[.5,.35],[.72,.42],[.6,.55],[.38,.55]]);},AL(){R('#E41E20');circ('#000',.5,.5,.22);}
+ };
+ c.save?.();
+ if(typeof c.beginPath==='function'&&typeof c.rect==='function'&&typeof c.clip==='function'){c.beginPath();c.rect(x,y,w,h);c.clip();}
+ if(draw[code])draw[code]();else{R('#5F6368');}
+ c.restore?.();
+ if(outline){c.fillStyle='rgba(255,255,255,0.35)';c.fillRect(x,y,w,1);c.fillRect(x,y+h-1,w,1);c.fillRect(x,y,1,h);c.fillRect(x+w-1,y,1,h);}
+}
 export const LEADER={label:'CHIP LEADER',gold:'#D4AF37',text:'#F3D27A',fill:'#33301F',font:'700 17px Montserrat'};
 export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,pixelDensity=1,branding={}){
  if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
  if(!(logo?.naturalWidth>0)||!(logo?.naturalHeight>0))throw Error('The Genting logo could not be loaded. The JPEG was not generated.');
- const page=branding.page,measureRows=page?.measureRows||rows,bb=bigBlind(tournament.bb),topChips=Math.max(...measureRows.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaidIndex=paid?measureRows.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaidIndex>=0&&lastPaidIndex<measureRows.length-1?measureRows[lastPaidIndex]:null,bubbles=[],l=layout(rows.length);if(page?.sections){l.sections=page.sections;l.rows=Math.max(page.rows||0,Math.ceil(rows.length/l.sections));}if(!rows.length)throw Error('There are no qualified players.');if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
+ const page=branding.page,measureRows=page?.measureRows||rows,showFlags=branding.flags!==false&&measureRows.some(r=>countryCode(r.nationality)),bb=bigBlind(tournament.bb),topChips=Math.max(...measureRows.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaidIndex=paid?measureRows.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaidIndex>=0&&lastPaidIndex<measureRows.length-1?measureRows[lastPaidIndex]:null,bubbles=[],l=layout(rows.length);if(page?.sections){l.sections=page.sections;l.rows=Math.max(page.rows||0,Math.ceil(rows.length/l.sections));}if(!rows.length)throw Error('There are no qualified players.');if(rows.some(r=>!Number.isSafeInteger(r.chips)||r.chips<=0))throw Error('Correct the ChipCount values before exporting.');
  if(!validTournamentTime(tournament.time))throw Error('Enter a time from 00:00 to 23:59 (HH:mm).');
  const c=canvas.getContext('2d');if(!c)throw Error('The image exceeds the browser’s capacity.');
- const bodyFont=27,lineHeight=34,padding=14,sectionGap=40;
- c.font=TABLE_FONT(bodyFont);let nameWidth=580;const measuredNames=measureRows.map(r=>String(r.name));while(measuredNames.some(value=>wrapTournamentName(c,value,nameWidth-padding*2).length>2))nameWidth=Math.ceil(nameWidth*1.15);
+ const bodyFont=27,lineHeight=34,padding=14,sectionGap=40,flagW=Math.round(bodyFont*1.15),flagH=Math.round(flagW*2/3),flagSpace=showFlags?flagW+12:0;
+ c.font=TABLE_FONT(bodyFont);let nameWidth=580;const measuredNames=measureRows.map(r=>String(r.name));while(measuredNames.some(value=>wrapTournamentName(c,value,nameWidth-padding*2-flagSpace).length>2))nameWidth=Math.ceil(nameWidth*1.15);
  const textWidth=value=>c.measureText(String(value)).width;const rankWidth=Math.max(90,...measureRows.map(r=>textWidth(r.rank)+padding*2)),chipWidth=Math.max(230,...measureRows.map(r=>textWidth(r.chips.toLocaleString('en-GB'))+padding*2+(bb?textWidth(bbLabel(r.chips,bb))*BB_STYLE.scale+16:0)));
  c.font=TABLE_FONT(19,700);const widths=[Math.max(rankWidth,textWidth('RANK')+padding*2),nameWidth,Math.max(250,textWidth('QUALIFIED FROM')+padding*2),Math.max(chipWidth,textWidth('CHIP COUNT')+padding*2)],sectionWidth=widths.reduce((a,b)=>a+b,0);
- l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=TABLE_FONT(bodyFont);const playerLines=rows.map(r=>wrapTournamentName(c,String(r.name),nameWidth-padding*2)),baseRowHeight=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)).some(lines=>lines.length>1)?86:58;
+ l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=TABLE_FONT(bodyFont);const playerLines=rows.map(r=>wrapTournamentName(c,String(r.name),nameWidth-padding*2-flagSpace)),baseRowHeight=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2-flagSpace)).some(lines=>lines.length>1)?86:58;
  const previousVerticalMargin=l.sections===1?64:l.sections===2?80:96,verticalMargin=l.sections===1?32:l.sections===2?40:44,previousFooterGap=l.sections===1?48:l.sections===2?64:72,footerGap=24,bottomMargin=14,rowHeight=baseRowHeight+Math.min(14,Math.floor((previousFooterGap-footerGap+previousVerticalMargin-bottomMargin+2*(previousVerticalMargin-verticalMargin))/l.rows));
  const innerWidth=l.width-80;
  const nameSize=l.sections===1?48:l.sections===2?62.4:70.2,k=nameSize/48;
@@ -332,7 +395,7 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  // Pages keep the first page's size and type sizes; a page with 20 players or fewer uses one centred column.
  const drawSections=page?.sections?Math.min(l.sections,rows.length<=COLUMN_MAX?1:2):l.sections,startX=40+(l.sections-drawSections)*(sectionWidth+sectionGap)/2;
  for(let section=0;section<drawSections;section++){const x=startX+section*(sectionWidth+sectionGap),count=Math.floor(rows.length/drawSections)+(section<rows.length%drawSections?1:0);let dx=x;c.font=TABLE_FONT(19,700);c.fillStyle='#eee';c.textBaseline='alphabetic';JPEG_COLUMNS.forEach((label,i)=>{c.textAlign=i===0||i===3?'right':'left';c.fillText(label,dx+(i===0||i===3?widths[i]-padding:padding),tableY);dx+=widths[i];});
- for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2,leader=r.chips===topChips;if(r===bubbleRow)bubbles.push({x,y:top+rowHeight-1.5,w:sectionWidth});c.fillStyle=leader?LEADER.fill:j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(x,top,sectionWidth,rowHeight-3);if(j===count-1){c.fillStyle=TABLE_EDGE;c.fillRect(x,top+rowHeight-5,sectionWidth,2);}if(leader){const b=3,h=rowHeight-3;c.fillStyle=LEADER.gold;c.fillRect(x,top,sectionWidth,b);c.fillRect(x,top+h-b,sectionWidth,b);c.fillRect(x,top,b,h);c.fillRect(x+sectionWidth-b,top,b,h);}let dx=x;c.font=TABLE_FONT(bodyFont);c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding),lines=Array.isArray(value)?value:[value];if(leader&&(i===0||i===3))c.fillStyle=LEADER.text;const medal=i===0?MEDALS[Number(r.rank)]:null;if(medal){c.font=TABLE_FONT(bodyFont,700);drawMedal(c,tx-c.measureText(lines[0]).width/2,centre,Math.round(bodyFont*.8),medal);c.fillStyle=MEDAL_INK;c.textAlign='right';}lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));if(medal)c.font=TABLE_FONT(bodyFont);if(i===3&&bb){const used=c.measureText(lines[0]).width;c.font=TABLE_FONT(Math.round(bodyFont*BB_STYLE.scale));c.fillStyle=leader?LEADER.gold:BB_STYLE.colour;c.textAlign='right';c.fillText(bbLabel(r.chips,bb),tx-used-14,centre);c.font=TABLE_FONT(bodyFont);}dx+=widths[i];});}
+ for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2,leader=r.chips===topChips;if(r===bubbleRow)bubbles.push({x,y:top+rowHeight-1.5,w:sectionWidth});c.fillStyle=leader?LEADER.fill:j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(x,top,sectionWidth,rowHeight-3);if(j===count-1){c.fillStyle=TABLE_EDGE;c.fillRect(x,top+rowHeight-5,sectionWidth,2);}if(leader){const b=3,h=rowHeight-3;c.fillStyle=LEADER.gold;c.fillRect(x,top,sectionWidth,b);c.fillRect(x,top+h-b,sectionWidth,b);c.fillRect(x,top,b,h);c.fillRect(x+sectionWidth-b,top,b,h);}let dx=x;c.font=TABLE_FONT(bodyFont);c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding)+(i===1?flagSpace:0),lines=Array.isArray(value)?value:[value];if(i===1&&flagSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,tx-flagSpace,centre-flagH/2,flagW,flagH);c.fillStyle='#fff';}if(leader&&(i===0||i===3))c.fillStyle=LEADER.text;const medal=i===0?MEDALS[Number(r.rank)]:null;if(medal){c.font=TABLE_FONT(bodyFont,700);drawMedal(c,tx-c.measureText(lines[0]).width/2,centre,Math.round(bodyFont*.8),medal);c.fillStyle=MEDAL_INK;c.textAlign='right';}lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));if(medal)c.font=TABLE_FONT(bodyFont);if(i===3&&bb){const used=c.measureText(lines[0]).width;c.font=TABLE_FONT(Math.round(bodyFont*BB_STYLE.scale));c.fillStyle=leader?LEADER.gold:BB_STYLE.colour;c.textAlign='right';c.fillText(bbLabel(r.chips,bb),tx-used-14,centre);c.font=TABLE_FONT(bodyFont);}dx+=widths[i];});}
  offset+=count;}
  // Drawn after every row so the next row cannot cover the label.
  for(const b of bubbles){c.fillStyle=ITM.gold;c.fillRect(b.x,b.y-2,b.w,4);}
@@ -382,6 +445,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44,bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
  const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
  const rowH=Math.min(format.maxRow,Math.floor((area-rowHead-bandH-gaps*24-fixed)/format.perPage)),size=Math.max(18,Math.min(28,Math.round(rowH*.5)));
+ const showFlags=branding.flags!==false&&all.some(r=>countryCode(r.nationality)),fw=Math.round(size*1.15),fh=Math.round(fw*2/3),fSpace=showFlags?fw+10:0;
  const gap=(area-rowHead-bandH-fixed-format.perPage*rowH)/gaps;
  let y=format.top+gap;
  const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight},g=fitInZone(gentingCrop,{x:M,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'left');
@@ -404,7 +468,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   const strong=leader?LEADER.text:'#fff';
   const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
-  put(String(r.name),nameX,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax});
+  if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX,mid-fh/2,fw,fh);}
+  put(String(r.name),nameX+fSpace,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax-fSpace});
   put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:'#fff',align:'left',max:flightW-10});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
   if(bb){c.font=TABLE_FONT(size);const used=c.measureText(r.chips.toLocaleString('en-GB')).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
