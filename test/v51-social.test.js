@@ -95,7 +95,7 @@ test('few players: the responsible gambling band is smaller (64% at 1 player, fu
  const {bandScale}=await import('../dist/model.js');
  assert.equal(bandScale(1),.64);assert.equal(bandScale(5),.8);assert.equal(bandScale(10),1);assert.equal(bandScale(150),1);
  const h=n=>{let bh=0;const c={fillRect(){},drawImage(...a){if(a[0]===band)bh=a[4];},beginPath(){},arc(){},fill(){},measureText(v){return {width:String(v).length*10};},fillText(){}};drawSocial({getContext:()=>c},players(n),genting,{time:''},band,{},SOCIAL_FORMATS.square);return bh;};
- assert(h(2)<h(12));assert(Math.abs(h(12)-22)<1e-9,'post band at half the previous 44 px');
+ assert(h(2)<h(12));assert(Math.abs(h(12)-26.4)<1e-9,'post band: half of the previous 44 px, then +20%');
 });
 
 test('a short single page is laid out for its own rows: bigger rows, block centred with equal gaps',()=>{
