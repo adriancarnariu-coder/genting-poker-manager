@@ -251,14 +251,14 @@ $('#preset-delete').onclick=()=>{const label=presetSelect.value;if(!label)return
 renderPresets('');
 // ---------- V51 background matched to the tournament logo (one variant per day of the week).
 const backgroundSelect=$('#background-style');
-try{const saved=localStorage.getItem('genting-background-style');if(saved==='logo'||saved==='default')backgroundSelect.value=saved;}catch{}
+try{const saved=localStorage.getItem('genting-background-style-v2');if(saved==='logo'||saved==='default')backgroundSelect.value=saved;}catch{}
 function brandPalette(){
  if(!brand?.image)return null;
  try{const crop=brand.crop||{x:0,y:0,w:brand.image.naturalWidth,h:brand.image.naturalHeight},scale=Math.min(1,160/Math.max(crop.w,crop.h)),w=Math.max(1,Math.round(crop.w*scale)),h=Math.max(1,Math.round(crop.h*scale)),canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const c=canvas.getContext('2d');c.drawImage(brand.image,crop.x,crop.y,crop.w,crop.h,0,0,w,h);return logoPalette(c.getImageData(0,0,w,h).data);}catch{return null;}
 }
 function exportTheme(date){return backgroundSelect.value==='logo'?dayTheme(brandPalette(),date):null;}
 function updateBackgroundNote(){const note=$('#background-note');if(!note)return;if(backgroundSelect.value!=='logo'){note.textContent='';return;}if(!brand){note.textContent='Add a tournament logo to use its colours. Until then the Genting dark background is used.';return;}if(!brandPalette()){note.textContent='This logo has no clear colour (black, white or grey), so the Genting dark background is used.';return;}note.textContent=`Colours from the tournament logo · ${DAY_NAMES[dayIndex(tournamentDate.value)]} variant (changes with the tournament date).`;}
-backgroundSelect.addEventListener('change',()=>{try{localStorage.setItem('genting-background-style',backgroundSelect.value);}catch{}invalidate();render();updateBackgroundNote();});
+backgroundSelect.addEventListener('change',()=>{try{localStorage.setItem('genting-background-style-v2',backgroundSelect.value);}catch{}invalidate();render();updateBackgroundNote();});
 tournamentDate.addEventListener('change',updateBackgroundNote);setInterval(()=>{if(backgroundSelect.value==='logo')updateBackgroundNote();},1500);updateBackgroundNote();
 // V51 flags toggle (remembered in this browser).
 {const box=$('#show-flags');try{const saved=localStorage.getItem('genting-show-flags');if(saved==='0')box.checked=false;}catch{}box.addEventListener('change',()=>{try{localStorage.setItem('genting-show-flags',box.checked?'1':'0');}catch{}invalidate();render();});}

@@ -6,8 +6,8 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "5f8a8d4fc7ad4372d430bc701a99f9806003178e0e1834749d726531d16de743",
-      "bytes": 53436,
+      "sha256": "d90e39e24b3e9108005368f528cebf5f556a8ad8928a8f62a155362fad63799f",
+      "bytes": 53442,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
       "lineEndingsOnly": false
     },
@@ -48,8 +48,8 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "42c1f45015c9d687a9c4355736cc1bccd980b5454de85c1f70179eb52b836ad4",
-      "bytes": 13604,
+      "sha256": "babc3ae01510195dd3f0764454d52e2afe6e98a476536bf904ca813d785cf50f",
+      "bytes": 13613,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
     },
@@ -251,11 +251,12 @@
     },
     {
       "version": "V52 BPS200 template",
-      "description": "Header: \"Prize pool so far: £X · £Y guaranteed\" and \"N qualified · Flights remaining: 1C–1H\" on separate lines (missing values omitted). Post and Story tables: RANK | PLAYER | BB | CHIPS headings on every page, no qualified-from column, exact chip counts (915,000), BB as a whole number in its own right-aligned column, flags and top 3 medals kept, no gold frame on the leader row. Instagram post 1080 x 1080: 15 players per page, page indicator next to the title (Day 2 · 1/2), responsible gambling band at 60% of its original size (half, then +20%), directly on the page background (no separate strip); band image replaced with the 2000 x 107 white-on-transparent version supplied by Adrian. Other formats keep their pagination.",
+      "description": "Header: \"Prize pool so far: £X · £Y guaranteed\" and \"N qualified · Flights remaining: 1C–1H\" on separate lines (missing values omitted). Post and Story tables: RANK | PLAYER | BB | CHIPS headings on every page, no qualified-from column, exact chip counts (915,000), BB as a whole number in its own right-aligned column, flags and top 3 medals kept, no gold frame on the leader row. Instagram post 1080 x 1080: 15 players per page, page indicator next to the title (Day 2 · 1/2), responsible gambling band at 60% of its original size (half, then +20%), directly on the page background (no separate strip); band image replaced with the 2000 x 107 white-on-transparent version supplied by Adrian. Other formats keep their pagination. Logo-matched background is now the default background (Genting dark when there is no tournament logo).",
       "files": [
         "dist/model.js",
         "dist/index.html",
-        "dist/responsible-gambling.png"
+        "dist/responsible-gambling.png",
+        "dist/app.js"
       ]
     }
   ]
