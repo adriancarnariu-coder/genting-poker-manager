@@ -528,15 +528,15 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // Red rule above the table, picking up the Genting logo red.
  c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:P.grey};
- put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
+ // FLIGHT column: heading "FLIGHT", short codes "1D" in the row text size and colour, both centred in a column as wide
+ // as the wider of the two, ending 14 px before the BB values; names stop 18 px before it.
+ c.font=TABLE_FONT(15,700);c.letterSpacing='0px';const headW=c.measureText('FLIGHT').width;c.font=TABLE_FONT(size);const flightW=Math.ceil(Math.max(headW,c.measureText('1W').width)),flightX=flightEnd-flightW,flightMid=flightX+flightW/2,nameMax=flightX-nameX-18;
+ put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('FLIGHT',flightMid,y+14,{...headStyle,align:'center'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
  // BB heading: only "BB", in the same font and size as the values under it (one step bolder), right-aligned on
  // the same edge as their last digit. The starting blind is not shown; it is only used to work out the BB values.
  if(bb)put('BB',bbX,y+14,{size:Math.round(size*BB_STYLE.scale),weight:600,colour:P.grey,align:'right'});
  y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
- // "Day 1A" written as before, in the row text size and colour, in a column sized for the widest label ("Day 1W" as a safe width)
- // and ending before the BB values; names stop 18 px before it.
- c.font=TABLE_FONT(size);c.letterSpacing='0px';const flightW=Math.ceil(c.measureText('Day 1W').width),flightX=flightEnd-flightW,nameMax=flightX-nameX-18;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
   c.fillStyle=j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=P.rule;c.fillRect(M,top+rowH-4,W-2*M,1);}
@@ -546,7 +546,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
   // A name too long for its space gets a smaller font (down to 75%) before it is squeezed.
   {const room=nameMax-fSpace-fGap,name=String(r.name);c.font=TABLE_FONT(size);c.letterSpacing='0px';const w=c.measureText(name).width,nsize=w>room?Math.max(Math.round(size*.75),Math.floor(size*room/w)):size;put(name,nameX+fGap+fSpace,mid,{size:nsize,arial:true,colour:P.ivory,align:'left',max:room});}
-  if(normalizeFlight(r.flight))put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:P.ivory,align:'left',max:flightW});
+  const flightLetter=normalizeFlight(r.flight);if(flightLetter)put('1'+flightLetter,flightMid,mid,{size,arial:true,colour:P.ivory,align:'center',max:flightW});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
   if(bb)put(bbCount(r.chips,bb),bbX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:P.grey,align:'right',max:bbW});
   if(r===bubbleRow)bubble=top+rowH-1.5;

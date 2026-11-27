@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "d4c335c60dc0f862fb970779d25a1c57788120b0834760719bc6fef66f244e8b",
-      "bytes": 63846,
+      "sha256": "8a93316d2ae4c5a226ad53905168a3f94a0cb9b11aecaf07764fa509b7b3278c",
+      "bytes": 64058,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -349,6 +349,13 @@
     {
       "version": "V52 qualified-from as before",
       "description": "Qualified-from flight written as before, 'Day 1A', in the row text size and ivory, no heading, in a column sized for the widest label and ending 14 px before the BB values; names stop 18 px before it. A name too long for its space now gets a smaller font (down to 75%) before it is squeezed.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 FLIGHT column",
+      "description": "Qualified-from flight as a short code (1D) under a FLIGHT heading (same style and height as PLAYER / BB / CHIPS), centred in a column as wide as the heading or code, ending 14 px before the BB values; codes in the row text size and ivory.",
       "files": [
         "dist/model.js"
       ]

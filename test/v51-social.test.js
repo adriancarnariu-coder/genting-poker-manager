@@ -126,7 +126,7 @@ test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label),
   for(const h of ['PLAYER','BB','CHIPS'])assert(r.text.some(t=>t.value===h),h+' heading on page '+page.number);
   assert(!r.text.some(t=>t.value==='RANK'),'no RANK label');
   assert(r.text.some(t=>t.value===String(rows[0].rank)||rows[0].rank<=3),'rank numbers kept');
-  assert(!r.text.some(t=>/^(QUALIFIED FROM|FLIGHT|QUALIFIED)$/i.test(t.value)),'no heading for the flight');const fl=r.text.filter(t=>/^Day 1[A-H]$/.test(t.value));assert.equal(fl.length,rows.length,'qualified-from flight on every row');assert(fl.every(t=>t.x===fl[0].x),'flights in one column');assert(fl[0].x<r.text.find(t=>t.value==='BB').x-60,'before BB');
+  const fh=r.text.find(t=>t.value==='FLIGHT');assert(fh,'FLIGHT heading');assert.equal(fh.y,r.text.find(t=>t.value==='PLAYER').y,'FLIGHT heading level with PLAYER');assert(!r.text.some(t=>/^Day 1/.test(t.value)),'short codes only');const fl=r.text.filter(t=>/^1[A-H]$/.test(t.value));assert(fl.every(t=>t.x===fh.x),'codes centred under FLIGHT');assert.equal(fl.length,rows.length,'qualified-from flight on every row');assert(fl.every(t=>t.x===fl[0].x),'flights in one column');assert(fl[0].x<r.text.find(t=>t.value==='BB').x-60,'before BB');
   const bbText=r.text.find(t=>t.value==='BB'),chips=r.text.find(t=>t.value==='CHIPS'),player=r.text.find(t=>t.value==='PLAYER'),name=r.text.find(t=>t.value.startsWith('Player '));
   assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');assert.equal(player.x,name.x,'PLAYER starts where the names start');
   assert(r.text.some(t=>t.value==='DAY 2'),'DAY 2 on its own line');assert(r.text.some(t=>t.value==='BPS200 MAIN EVENT'),'short title in capitals');
