@@ -56,3 +56,33 @@ The old public Sites application is unchanged and is not protected by this GitHu
 
 Private workbook checks use GENTING_REAL_FIXTURES outside the repository; never commit fixtures.
 The original main is preserved on backup/main-before-version-49-2026-11-06.
+
+## V50 audit fixes (branch claude/v50-audit-improvements)
+
+- Chrome/help links use the current address; no link to the old public copy remains.
+- Uploading a file whose name is already loaded asks: replace it, or keep both (the new one becomes "name (2).xlsx").
+- Duplicate review: each group shows name, Player ID, flight, chips and source. KEEP HIGHEST STACK removes the lower stacks;
+  DIFFERENT PLAYERS keeps all. Decisions are stored with the exact group, so a later file change re-opens review.
+- Session expiry or a network problem no longer clears local data: the app returns to sign-in and the files are still there.
+  Only LOG OUT clears local player data. A notice appears 5 minutes before the session ends.
+
+## Tournament branding (branch claude/v50-tournament-branding, local review)
+
+- Tournament settings card: UPLOAD TOURNAMENT LOGO (PNG, JPEG, WebP, max 10 MB) with thumbnail, REPLACE LOGO and REMOVE LOGO.
+- The logo is saved in this browser per tournament name (recurring series); "Only for this date" overrides it for one edition.
+- JPEG: Genting top-left and the tournament logo top-right in two equal zones with symmetric margins, framed by their visible
+  (non-transparent) part and drawn from the original image. Without a tournament logo the right zone stays empty.
+- Tournament name centred below the header (max two lines), then date and 24-hour time on one line, e.g. "24 Nov 2026 · 18:15".
+- Download name: <Tournament>_<YYYY-MM-DD>_Day2_Leaderboard_<W>x<H>.jpg. Logos are not part of session backups.
+
+## V51 leaderboard pages and social formats (branch claude/v51-multi-page)
+
+- **Pages:** at most 20 players per column and 40 per JPEG. Longer leaderboards are split into full pages of 40 in rank order (120 players = 3 pages; up to 160 = 4 pages; more still export). Every page has the same size and type; a page with 20 or fewer players uses one centred column.
+- **Formats:** Full leaderboard, Post 1080 x 1080 (15 per page) and Story 1080 x 1920 (20 per page, 250 px top and bottom left clear for Instagram).
+- **Header:** "<name> · Day 2", date and time, "N qualified · £X prize pool", and optionally "1st place £X · min cash £Y". Page number small at the bottom right.
+- **Frame:** equal visible gaps above the header, between header and table, between table and the responsible gambling band, and under the band. A thin line marks the end of the table.
+- **Table:** chip leader row framed in gold; ranks 1-3 in gold, silver and bronze discs; optional Day 2 big blind shows each stack in BB; places paid draws a gold line under the last paid place.
+- **Export:** page switcher, DOWNLOAD ALL PAGES, SAVE & SHARE ALL PAGES, numbered filenames (`..._1of3_...jpg`).
+- **Checks before export:** plain warnings above GENERATE (missing name or date, invalid amounts, prizes that do not add up, places paid not below the qualified count, stacks under 1 BB). They never block the export.
+- **Fields:** tournament details in rows across the page (two columns on phones). Session backups keep the new fields; older backups still restore.
+- Tests: `npm test` (138 pass, 6 skipped because they need the real fixtures).

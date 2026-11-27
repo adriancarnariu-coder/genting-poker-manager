@@ -6,10 +6,17 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "2b19212c8b9435d0161c00f14bb77908f187129b9ed67c1709c3fee5d2658682",
-      "bytes": 23594,
+      "sha256": "cf818bbf01119ca3b2fcc2b2b95711a73196c5501ddf2e909a04dff0d74524c5",
+      "bytes": 53601,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/branding.js",
+      "sha256": "b3c1d729270964d576ce02a195770d33a86b53b47888744db1986b6c9523b6ee",
+      "bytes": 4798,
+      "localDeploymentAssetSha256": null,
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/clock-picker.css",
@@ -41,24 +48,24 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
-      "bytes": 9516,
+      "sha256": "540ac72b7b01ff1fc084f618ffe14416dfc4ee95ffe7c4c8339bbcef47c8a5ef",
+      "bytes": 13765,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
     },
     {
       "path": "dist/jpeg-actions.js",
-      "sha256": "dbc60f0a1472842a5cba39ad82e46ab361de1585659339ad79b2786572fb0286",
-      "bytes": 2864,
+      "sha256": "05dd30ea3681c4f475dbc08927309a069237a253a9ceb32b75b4a5269a5e6818",
+      "bytes": 2907,
       "localDeploymentAssetSha256": "b70cc8c61ace2d21e01657dde637fc7892b817cf60fb19a364c43ec0ab8147e1",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/jpeg-save-as.js",
-      "sha256": "63dde69f2a4ca7ee7f9107e19265cc602181611552ae3802b01f0931a42951c1",
-      "bytes": 1700,
+      "sha256": "80a4793150fc74f173c4e0e61c67570222bef801452ed1fbd8b018673ac948e8",
+      "bytes": 1719,
       "localDeploymentAssetSha256": "c1d1df70844d9e6091c02f1f667f435558370a2de3cb6446beb354d962f0186b",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/logo-ui.svg",
@@ -76,24 +83,24 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "fd4d0f21df305070e54cbb2e181775d565edd99369c8e53859ae378682285c03",
-      "bytes": 18398,
+      "sha256": "3ce589b36e36230cf0f2cd7cd2bd880e70aede0439d4fde633b5e73972dc90ef",
+      "bytes": 64297,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/responsible-gambling.png",
-      "sha256": "a7ef839ded7d3dd52a4cab6176ce09a26ce768640c0bc9179e0d8ad27430f542",
-      "bytes": 111141,
+      "sha256": "de44dab9c7a8681939855bc5fb506abc71153d2806080a6644f416611b04297a",
+      "bytes": 52008,
       "localDeploymentAssetSha256": "a7ef839ded7d3dd52a4cab6176ce09a26ce768640c0bc9179e0d8ad27430f542",
       "lineEndingsOnly": false
     },
     {
       "path": "dist/session-backup.js",
-      "sha256": "3633e945ba1aef3049989da5c83978e6bffa47a8fd648e98d4b0effdf3cec36c",
-      "bytes": 3492,
+      "sha256": "9484f205a0d3acc39fb56a6f47b191484350524f67c3e93f80b778b47bb5deb2",
+      "bytes": 5619,
       "localDeploymentAssetSha256": "c34ad48563a990579247dbdfc0b9c7c27b1f99ef2314e9f068b71a7068de945a",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/style.css",
@@ -104,10 +111,10 @@
     },
     {
       "path": "dist/theme.css",
-      "sha256": "e7d1855b157e3c6ae8387c97d85528474edf279b413fea2c787fc7b07f032d31",
-      "bytes": 7777,
+      "sha256": "68750dc1fb36ace58bbca5c0680074549646812262ad6a6a503c68022d87484d",
+      "bytes": 17981,
       "localDeploymentAssetSha256": "d2fea6e59b69dc826199b286afac3da58c9544e737b5a833e0379f21cfbc9843",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
     },
     {
       "path": "dist/vendor/LICENSE.sheetjs",
@@ -115,6 +122,16 @@
       "bytes": 11556,
       "localDeploymentAssetSha256": "f9463066a83f512aaa2c4f5bda7514c82110ec46b703f477d112c90d33b7ed83",
       "lineEndingsOnly": false
+    },
+    {
+      "path": "dist/vendor/montserrat-OFL.txt",
+      "sha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+      "bytes": 4400
+    },
+    {
+      "path": "dist/vendor/montserrat-variable.ttf",
+      "sha256": "0f7b311b2f3279e4eef9b2f968bcdbab6e28f4daeb1f049f4f278a902bcd82f7",
+      "bytes": 744936
     },
     {
       "path": "dist/vendor/xlsx.full.min.cjs",
@@ -125,10 +142,230 @@
     },
     {
       "path": "dist/view-mode.js",
-      "sha256": "f356ad96bce312f644ab400f1b6543e74e3fa7db3f82f427d4039a252a98b3d0",
-      "bytes": 505,
+      "sha256": "ef20c9d902a9b7171f5ae3c6c834b47c94f346063a83379dc787286f68c4a03e",
+      "bytes": 2299,
       "localDeploymentAssetSha256": "a3230a064e5109808a7d0d14f55b0b4ef646fb18d53c0ca387f536c3cdac9423",
-      "lineEndingsOnly": true
+      "lineEndingsOnly": false
+    }
+  ],
+  "presentationUpdates": [
+    {
+      "description": "Staff interface credit enlarged from 11px to 13.2px; centred with 12px spacing, light grey and semibold author. JPEG and functionality unchanged.",
+      "files": [
+        "dist/index.html",
+        "dist/theme.css"
+      ]
+    },
+    {
+      "description": "Compact charcoal JPEG footer with original artwork and existing minimum artwork height.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Aligned JPEG header and reduced original gambling strip.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Seamless JPEG footer, matched header typography, and bounded high-density JPEG rendering.",
+      "files": [
+        "dist/model.js",
+        "dist/app.js"
+      ]
+    },
+    {
+      "description": "30% larger matched JPEG headings and native 118-player reference size when content fits.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Enlarged original logo and footer artwork, plus larger date and plain white start time.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "description": "Centred tournament heading and right-aligned date and start time in the JPEG header.",
+      "files": [
+        "dist/model.js"
+      ]
+    }
+  ],
+  "auditUpdates": [
+    {
+      "version": "V50 audit fixes",
+      "description": "Removed links to the old public app copy; same-name uploads ask before replacing; duplicate review keeps the highest stack per player; backup validates duplicate decisions.",
+      "files": [
+        "dist/app.js",
+        "dist/index.html",
+        "dist/model.js",
+        "dist/session-backup.js",
+        "dist/theme.css",
+        "dist/view-mode.js"
+      ]
+    },
+    {
+      "version": "V50 review follow-up",
+      "description": "Duplicate panel opens only when new unresolved groups appear; offline notice stays visible after a back/forward restore.",
+      "files": [
+        "dist/app.js"
+      ]
+    },
+    {
+      "version": "V50 mixed duplicate groups",
+      "description": "Mixed duplicate groups: keep the highest stack per Player ID, or tick exactly which records to keep.",
+      "files": [
+        "dist/app.js",
+        "dist/model.js",
+        "dist/theme.css"
+      ]
+    },
+    {
+      "version": "V50 tournament branding",
+      "description": "Tournament logo upload saved per tournament name or date; Genting top-left and tournament logo top-right in equal zones; title centred below the header (max two lines); date and time on one line; export file name with tournament and date.",
+      "files": [
+        "dist/app.js",
+        "dist/branding.js",
+        "dist/index.html",
+        "dist/jpeg-actions.js",
+        "dist/jpeg-save-as.js",
+        "dist/model.js",
+        "dist/theme.css"
+      ]
+    },
+    {
+      "version": "V51 multi-page leaderboard",
+      "description": "At most 20 players per column and 40 per JPEG page; pages filled to 40 in rank order (120 = 3 pages, up to 160 = 4; more still export), every page the same size and type. Header between the logos: \"<name> · Day 2\", date and time, then \"N qualified · £X prize pool\" (prize pool optional). Equal visible gaps above the header, between header and table, between table and responsible gambling band and under the band (Story: inside 250 px top and bottom safe zones); thin line under the last row. Chip leader row framed in gold; top 3 gold, silver and bronze discs. Optional 1st place prize and min cash: \"1st place £X · min cash £Y\" line in the header; places paid draws a plain gold line under the last paid place (not written in the header). Optional Day 2 big blind shows each stack in BB. Formats: full leaderboard, Post 1080 x 1080 (20 per page) and Story 1080 x 1920 (20 per page, Instagram safe zones). Page number at the bottom right, numbered filenames, page switcher, download all pages, share all pages together. Tournament fields in rows across the page (two columns on phones). Checks before export: plain warnings above GENERATE (missing name or date, invalid amounts, prizes that do not add up, places paid not below the qualified count, stacks under 1 BB); they never block the export. BB text 85% of the name size. Session backups keep the new optional fields; older backups still restore. Flights A-H; optional \"Flights in this event\" (1-8) shows played and still-to-play flights under the field and adds \"N flights to play: 1F, 1G, 1H\" to the header. Ties: equal stacks share the same place (1, 2, 2, 4) and are listed alphabetically, independent of import order. One typeface: the table text uses Montserrat (bundled) instead of Arial. Summary before export: players and chips per flight, and how many names the JPEG shows in full or as initials. Phone pass: larger native upload control (kept directly tappable for Android) plus drag and drop on desktop, 44 px touch targets, players as cards under 600 px. Tournament history: save the current tournament on this device (same name and date updates it), open it again with review and undo, delete with a second confirmation; up to 50 kept, stored in this browser only. Shorter interface text; phone and save help stays in the collapsible panels. Series presets: save the repeatable details of a series (name, start time, flights, Day 2 big blind, image format) and fill them with one choice; stored in this browser. Background matched to the tournament logo (optional): colours taken from the logo, seven dark variants Monday to Sunday chosen by the tournament date; Genting dark grey stays the default. Country flags next to names (only with GDPR consent; drawn in the app, about 60 countries; can be switched off). Simple interface header: one title, no logo. Guarantee (GTD): header shows \"£15,000 of £100,000 GTD\"; kept in presets and backups. With few players the responsible gambling band is smaller (64% at 1 player, full size from 10). Post and Story: a short single page is laid out for its own rows (bigger rows and text, centred with equal gaps). Flights line always shown, right under the prize line: \"2 of 8 flights played · to play: 1C, 1D, 1E, 1F, 1G, 1H\", \"All 8 flights played\", or without a total \"Flights played: 1A–1F\". Instagram post 1080 x 1080 (20 per page) is the default format.",
+      "files": [
+        "dist/app.js",
+        "dist/branding.js",
+        "dist/index.html",
+        "dist/jpeg-actions.js",
+        "dist/model.js",
+        "dist/theme.css",
+        "dist/view-mode.js"
+      ]
+    },
+    {
+      "version": "V52 BPS200 template",
+      "description": "Header: \"Prize pool so far: £X · £Y guaranteed\" and \"N qualified · Flights remaining: 1C–1H\" on separate lines (missing values omitted). Post and Story tables: RANK | PLAYER | BB | CHIPS headings on every page, no qualified-from column, exact chip counts (915,000), BB as a whole number in its own right-aligned column, flags and top 3 medals kept, no gold frame on the leader row. Instagram post 1080 x 1080: 20 players per page (as agreed with Adrian), page indicator next to the title (Day 2 · 1/2), responsible gambling band at 60% of its original size (half, then +20%), directly on the page background (no separate strip); band image replaced with the 2000 x 107 white-on-transparent version supplied by Adrian. Other formats keep their pagination. Logo-matched background is now the default background (Genting dark when there is no tournament logo).",
+      "files": [
+        "dist/model.js",
+        "dist/index.html",
+        "dist/responsible-gambling.png",
+        "dist/app.js"
+      ]
+    },
+    {
+      "version": "V52 post layout v3",
+      "description": "Instagram post 1080 x 1080: 20 players per page with the remainder split evenly over the last two pages (second-to-last gets the extra player; 29 = 15 + 14, 153 = 6 x 20 + 17 + 16); same columns, row height and footer on every page. Header: tournament name in white, DAY 2 on its own line in champagne gold #E6C88A (letter-spaced), optional Day 2 starting BB. Above the table: PROVISIONAL CHIP COUNTS while flights remain and PAGE X OF Y on the right. No RANK label (numbers and medals kept); PLAYER aligned with the names after the flag space, which is kept on every row.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 fixed 20 per page",
+      "description": "Instagram post back to a fixed 20 players per page (29 = 20 + 9, 153 = 7 x 20 + 13); fewer than 20 in total stay on one page laid out bigger and centred. The balanced last-two-pages split is kept as an unused helper option.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 final chip counts",
+      "description": "Once every flight is played: FINAL CHIP COUNTS in champagne gold above the table instead of PROVISIONAL CHIP COUNTS, 'Final prize pool', 'N qualified · All flights complete'. New optional field 'Day 2 starts' (typed text, e.g. Sat 29 Nov · 12:00, kept in the session backup): shown as DAY 2 STARTS ... on the right of the label row on a single page, or on the last header line when there are several pages (the right side then shows PAGE X OF Y).",
+      "files": [
+        "dist/app.js",
+        "dist/index.html",
+        "dist/model.js",
+        "dist/session-backup.js"
+      ]
+    },
+    {
+      "version": "V52 short header",
+      "description": "Post / Story header: tournament name in capitals (type the short name, e.g. BPS200 Main), DAY 2 in champagne gold; prize line '£17,585 collected · 18% of GTD' (amount in gold, percent of the guarantee in light grey, rounded to the nearest whole number, omitted when the guarantee is missing or zero; guarantee only: '£100,000 GTD'); status line '29 qualified · 1C–1H left'. Above the table: 'CHIP COUNTS SO FAR' (or FINAL CHIP COUNTS) · 'STARTING BB 6,000' on the left, page indicator or Day 2 start on the right.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 BPS minimal",
+      "description": "Post / Story in a British Poker Series palette: warm black page #11100E with discreet alternate rows #1B1813, ivory #F4F0E7 for the name and players, BPS gold #D6B46D for DAY 2 and the chip leader, warm grey #BCB4A6 for secondary text, thin dark gold rule #7B6237 above the table (original logos and band unchanged). Three-line header: tournament name, DAY 2, '29 Nov · 16:30 · 29 qualified' (empty parts left out); no prize, guarantee or flights in the image. Above the table: CHIP COUNTS SO FAR while flights remain, CHIP COUNTS afterwards; PAGE X OF Y on the right (also on the Story, no corner label). 'Start: 6,000' next to the BB heading. Square post: 20 per page with the remainder split evenly over the last two pages (29 = 15 + 14, 153 = 6 x 20 + 17 + 16).",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 day background back",
+      "description": "Post / Story background back to the logo-matched day background with the thin gold frame (rows tinted by the day theme); the BPS text style stays (ivory text, gold DAY 2 and chip leader, warm grey secondary text, dark gold rule, three-line header). Square post back to a fixed 20 players per page (29 = 20 + 9, 153 = 7 x 20 + 13); up to 20 in total on one page, bigger and centred.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 status row",
+      "description": "Status row above the table (post / Story): 'CHIP COUNTS SO FAR · 4 flights remaining' while scheduled flights have no imported results (count in smaller warm grey, '1 flight remaining' singular; a finished flight whose file is missing still counts), 'FINAL CHIP COUNTS' once every scheduled flight (e.g. 1A-1H) is imported, 'CHIP COUNTS SO FAR' without a count when the number of flights is not set. Worked out from all players, so every page of an export shows the same status; PAGE X OF Y stays on the right.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 status row three zones",
+      "description": "Status row above the table in three zones: status on the left (CHIP COUNTS SO FAR · N flights remaining / FINAL CHIP COUNTS), prize pool centred on the poster, PAGE X OF Y on the right. Provisional: the collected amount in warm grey with a small drawn open-circle loading mark. Final: PRIZE POOL and the confirmed amount (at least the guarantee) in BPS gold #D6B46D, no mark. Centre left empty without a prize pool; the centre block is scaled down if it would touch the left or right zone.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 provisional prize pool label",
+      "description": "Provisional centre of the status row now reads 'PRIZE POOL £17,585' in warm grey followed by the drawn open-circle loading mark; final stays 'PRIZE POOL £100,000' in BPS gold. Test for 6 flights (1A-1F): A-C imported shows CHIP COUNTS SO FAR · 3 flights remaining, A-F imported shows FINAL CHIP COUNTS.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 red rule and centred header",
+      "description": "Red rule (#cc1428, 2 px) back above the table, matching the Genting logo. Header text (name, DAY 2, date · time · qualified) centred in the real space between the drawn Genting and tournament logos instead of on the page centre (measured on the JPEG: 58 px to the Genting logo, 57 px to the BPS logo box) and level with the logos vertically (block moved up 2 px; logos and text both centred at y 84.5 on the 29-player post).",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 BB heading",
+      "description": "BB column heading shows only 'BB' (no 'Start: 6,000'), in the same font and size as the BB values under it, one weight bolder (600 vs 500), right-aligned on the same edge as their last digit (measured on the JPEG: 826-827 px for heading and values) and level with PLAYER and CHIPS on every page. The Day 2 big blind stays in the app and is still used to work out the BB values.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 qualified-from flight",
+      "description": "Each row shows the flight the player qualified from (e.g. 1C) after the name and before BB, in warm grey at the BB value size, with no column heading. Names keep a 16 px gap before it.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 qualified-from as before",
+      "description": "Qualified-from flight written as before, 'Day 1A', in the row text size and ivory, no heading, in a column sized for the widest label and ending 14 px before the BB values; names stop 18 px before it. A name too long for its space now gets a smaller font (down to 75%) before it is squeezed.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 FLIGHT column",
+      "description": "Qualified-from flight as a short code (1D) under a FLIGHT heading (same style and height as PLAYER / BB / CHIPS), centred in a column as wide as the heading or code, ending 14 px before the BB values; codes in the row text size and ivory.",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 BB heading centred",
+      "description": "BB heading centred over the column of BB values (digits stay right-aligned; the column width is the widest value in the whole export, so every page matches). Measured on the JPEG: heading centre 814.5 px, value centres 814-815 px on the 20-row page; 805 vs 804.5-806.5 px on the single page.",
+      "files": [
+        "dist/model.js"
+      ]
     }
   ]
 }

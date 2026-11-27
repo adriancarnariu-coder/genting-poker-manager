@@ -4,15 +4,21 @@ import {readFile,readdir} from 'node:fs/promises';
 import {createGateway,COOKIE,TTL} from '../auth/gateway.mjs';
 import {identityAdapter} from '../auth/identity.mjs';
 function fixture(){
- let time=1700000000000,allowed=true,up=true,id='admin-id',confirmed=true,settings=true,providerLogoutFail=false;const records=new Map(),calls=[],assets=[];
+ let time=1700000000000,clockStep=0,allowed=true,up=true,id='admin-id',confirmed=true,settings=true,providerLogoutFail=false;const records=new Map(),calls=[],assets=[];
  const env={APP_ORIGIN:'https://app.example',ADMIN_USER_ID:'admin-id',AUTH_SESSION_KEY:'a'.repeat(64)};
  const identity={inviteOnly:async()=>settings,login:async(e,p)=>{calls.push([e,p]);return {access_token:'secret-provider-token',expires_in:3600};},invite:async()=>({access_token:'secret-provider-token',expires_in:3600}),user:async token=>{if(!up)throw Error('upstream private detail');if(!allowed)return null;assert.equal(token,'secret-provider-token');return {id,confirmed_at:confirmed?'2026-01-01':null};},logout:async()=>{if(providerLogoutFail)throw Error('offline');}};
  const store={get:async k=>records.get(k),set:async(k,v)=>records.set(k,structuredClone(v)),delete:async k=>records.delete(k)};
- const handler=createGateway({env,identity,store,now:()=>time,paths:new Set(['dist/index.html','dist/app.js','dist/vendor/xlsx.full.min.cjs']),asset:async path=>{assets.push(path);return {body:Buffer.from('<body>Original application</body>'),type:'text/html'};}});
+ const handler=createGateway({env,identity,store,now:()=>{const value=time;time+=clockStep;return value;},paths:new Set(['dist/index.html','dist/app.js','dist/vendor/xlsx.full.min.cjs']),asset:async path=>{assets.push(path);return {body:Buffer.from('<body>Original application</body>'),type:'text/html'};}});
  const request=(path='/',{method='GET',body,session,origin=env.APP_ORIGIN,headers={}}={})=>handler(new Request('https://app.example'+path,{method,headers:{...(method==='POST'?{'Content-Type':'application/json',...(origin?{Origin:origin}:{})}:{}),...(session?{Cookie:session}:{}),...headers},...(body!==undefined?{body:JSON.stringify(body)}:{})}));
  const login=async()=>{const r=await request('/auth/login',{method:'POST',body:{email:'admin@example.test',password:'fake-test-password'}});assert.equal(r.status,200);return r.headers.get('set-cookie').split(';')[0];};
- return {env,records,calls,assets,request,login,advance:n=>time+=n,set:(k,v)=>{if(k==='allowed')allowed=v;if(k==='up')up=v;if(k==='id')id=v;if(k==='confirmed')confirmed=v;if(k==='settings')settings=v;if(k==='logoutFail')providerLogoutFail=v;}};
+ return {env,records,calls,assets,request,login,advance:n=>time+=n,set:(k,v)=>{if(k==='clockStep')clockStep=v;if(k==='allowed')allowed=v;if(k==='up')up=v;if(k==='id')id=v;if(k==='confirmed')confirmed=v;if(k==='settings')settings=v;if(k==='logoutFail')providerLogoutFail=v;}};
 }
+test('session creation crossing a millisecond boundary preserves the exact lifetime and immediate validity',async()=>{
+ const f=fixture();f.set('clockStep',1);const session=await f.login(),record=[...f.records.values()][0];
+ assert.equal(record.expires-record.created,TTL*1000);
+ assert.equal((await f.request('/auth/session',{session})).status,200);
+ f.advance(TTL*1000);assert.equal((await f.request('/auth/session',{session})).status,401);
+});
 test('unauthenticated app and direct assets never return private content',async()=>{
  const f=fixture();for(const path of ['/','/index.html','/app.js','/vendor/xlsx.full.min.cjs','/.netlify/functions/gateway','/dist/app.js']){const r=await f.request(path);assert.equal(r.status,303);assert.equal(r.headers.get('location'),'/auth/login');assert(!await r.text());}assert.equal(f.assets.length,0);
 });
