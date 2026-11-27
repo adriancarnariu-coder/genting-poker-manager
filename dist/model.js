@@ -214,8 +214,9 @@ function drawSegments(c,segments,cx,y,font,max){
 // A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
 // V52 short chip counts for Instagram: 874,500 -> "874.5K", 1,250,000 -> "1.25M".
 export function shortChips(n){if(!Number.isFinite(n))return '';const trim=(v,d)=>String(Number(v.toFixed(d)));if(n>=1e6||Number((n/1e3).toFixed(1))>=1000)return trim(n/1e6,2)+'M';if(n>=1e3)return trim(n/1e3,1)+'K';return String(n);}
-// British Poker Series palette for the post and Story: warm black page, discreet alternate rows, ivory text,
-// BPS gold for DAY 2 and the chip leader, warm grey for secondary text, dark gold rule above the table.
+// British Poker Series text colours for the post and Story: ivory text, BPS gold for DAY 2 and the chip leader,
+// warm grey for secondary text, dark gold rule above the table. The page and row background is the day theme
+// (matched to the tournament logo); page and rowB are not used for it.
 export const BPS_PALETTE={page:'#11100E',rowB:'#1B1813',ivory:'#F4F0E7',gold:'#D6B46D',grey:'#BCB4A6',dim:'#8E8678',rule:'#7B6237'};
 export const DAY_GOLD=BPS_PALETTE.gold;
 export const BAND_GAP=40,TABLE_EDGE='#5F6368';
@@ -432,12 +433,11 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
 // same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
 // Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
 export const SOCIAL_FORMATS={
- square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4,balanceLast:true},
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4},
  story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60,band:44}
 };
-// Post (balanceLast): full pages of 20 first, then the remainder split evenly over the last two pages (odd: the
-// second-to-last page gets one more), e.g. 29 = 15 + 14, 69 = 20 + 20 + 15 + 14, 153 = 6 x 20 + 17 + 16. Up to 20 in
-// total: one page laid out bigger and centred. Other formats fill pages of 20 in turn.
+// Pages are always filled with 20 players in turn (29 = 20 + 9, 153 = 7 x 20 + 13); up to 20 in total fit on one page
+// laid out bigger and centred. balanceLast (not used now) would split the remainder over the last two pages.
 export function pageSizes(n,per,balanceLast=false){if(n<=0)return [];const pages=Math.ceil(n/per);if(pages===1)return [n];if(!balanceLast)return Array.from({length:pages},(_,i)=>Math.min(per,n-i*per));const rest=n-per*(pages-2);return [...Array(pages-2).fill(per),Math.ceil(rest/2),Math.floor(rest/2)];}
 export function socialPages(rows,format){const out=[];let i=0;for(const size of pageSizes(rows.length,format.perPage,!!format.balanceLast)){out.push(rows.slice(i,i+size));i+=size;}return out;}
 export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,branding={},format=SOCIAL_FORMATS.square){
@@ -452,7 +452,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  canvas.width=W;canvas.height=H;
  const c=canvas.getContext('2d');if(!c)throw Error('The image exceeds the browser’s capacity.');
  c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
- const P=BPS_PALETTE;c.fillStyle=P.page;c.fillRect(0,0,W,H);
+ const P=BPS_PALETTE,rowTheme=branding.theme;if(rowTheme)rowTheme.paint(c,W,H);else{c.fillStyle='#202124';c.fillRect(0,0,W,H);}
  const put=(value,x,y,{size,weight=400,colour=P.ivory,align='center',max=W-2*M,arial=false,tracking=0})=>{
   c.font=arial?TABLE_FONT(size,weight>=600?700:500):weight+' '+size+'px Montserrat';
   c.letterSpacing=tracking?tracking*size+'px':'0px';c.textAlign=align;c.textBaseline='middle';c.fillStyle=colour;c.fillText(value,x,y,max);
@@ -506,7 +506,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
-  c.fillStyle=j%2?P.rowB:P.page;c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=P.rule;c.fillRect(M,top+rowH-4,W-2*M,1);}
+  c.fillStyle=j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=P.rule;c.fillRect(M,top+rowH-4,W-2*M,1);}
   const strong=leader?P.gold:P.ivory;
   const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});

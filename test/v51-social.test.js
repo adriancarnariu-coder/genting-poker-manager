@@ -15,7 +15,7 @@ const pageSet=(all,format)=>{const pages=socialPages(all,format);return pages.ma
 test('exact sizes: post 1080 × 1080 with 20 per page, Story 1080 × 1920 with 20 per page',()=>{
  assert.deepEqual([SOCIAL_FORMATS.square.width,SOCIAL_FORMATS.square.height,SOCIAL_FORMATS.square.perPage],[1080,1080,20]);
  assert.deepEqual([SOCIAL_FORMATS.story.width,SOCIAL_FORMATS.story.height,SOCIAL_FORMATS.story.perPage],[1080,1920,20]);
- assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[15,14],'29 players: 1-15 then 16-29');
+ assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[20,9],'29 players: 1-20 then 21-29');
  assert.deepEqual(socialPages(players(40),SOCIAL_FORMATS.story).map(p=>p.length),[20,20]);
  for(const f of Object.values(SOCIAL_FORMATS)){const {canvas}=draw(players(f.perPage),f);assert.equal(canvas.width,f.width);assert.equal(canvas.height,f.height);}
 });
@@ -27,7 +27,7 @@ test('every player of every page is drawn, inside the image and above the respon
    const names=r.text.filter(t=>t.value.startsWith('Player '));assert.equal(names.length,rows.length);
    const bandImage=r.images.find(a=>a[0]===band);assert(bandImage,'band drawn');
    const bandTop=bandImage[2];for(const t of names)assert(t.y<bandTop-10&&t.y>0,`n=${n}`);
-   const edge=f.key==='story'?f.height-f.bottom:f.height,rowBottoms=r.rects.filter(x=>x.x===40&&x.h<100&&['#11100E','#1B1813'].includes(x.colour)).map(x=>x.y+x.h);
+   const edge=f.key==='story'?f.height-f.bottom:f.height,rowBottoms=r.rects.filter(x=>x.x===40&&x.h<100&&['#202124','#292A2D','#33301F'].includes(x.colour)).map(x=>x.y+x.h);
    assert(bandImage[2]+bandImage[4]<=edge+1,'band inside the image and above the Story safe zone');
    if(rows.length===f.perPage&&(!page||page.number===1)){const tableEnd=Math.max(...rowBottoms),above=bandImage[2]-tableEnd,below=edge-(bandImage[2]+bandImage[4]);assert(Math.abs(above-below)<=1,`equal gaps ${above} / ${below}`);assert(above>=23);const red=r.rects.find(x=>x.colour==='#7B6237'&&x.h===1);assert(red.y>0);}
   }
@@ -48,7 +48,7 @@ test('chip leader, IN THE MONEY and page labels work in the social formats',()=>
  assert(!results.some(r=>r.text.some(t=>/ITM/.test(t.value))));
  results.forEach((r,i)=>{assert(r.text.some(t=>t.value===`PAGE ${i+1} OF 3`),'page indicator above the table');assert(!r.text.some(t=>/^\d+ \/ \d+$/.test(t.value)),'no corner page label on the post');});
  assert(results.every(r=>r.text.some(t=>t.value==='18:15 · 50 qualified')));
- assert(results.every(r=>r.rects.filter(x=>x.colour==='#11100E'||x.colour==='#1B1813').map(x=>x.h).filter(h=>h<100).every((h,_,a)=>h===a[0])),'same row height on every page');
+ assert(results.every(r=>r.rects.filter(x=>x.colour==='#202124'||x.colour==='#292A2D').map(x=>x.h).filter(h=>h<100).every((h,_,a)=>h===a[0])),'same row height on every page');
 });
 
 test('a single page has no page label and too many rows for one page is refused',()=>{
@@ -88,7 +88,7 @@ test('logo palette and day backgrounds: gold logo gives a warm palette, seven va
  assert(calls.some(c=>typeof c==='string'&&c.startsWith('hsla('+gold.hue+',')),'uses the logo hue');
  const rects=[];const c2={createLinearGradient(){return {addColorStop(){}};},createRadialGradient(){return {addColorStop(){}};},fillRect(x,y,w,h){rects.push({x,y,w,h,colour:this.fillStyle});},drawImage(){},beginPath(){},arc(){},fill(){},measureText(v){return {width:String(v).length*10};},fillText(){}};
  drawSocial({getContext:()=>c2},players(5),genting,{time:''},band,{theme:dayTheme(gold,'2026-11-23')},SOCIAL_FORMATS.square);
- assert.equal(rects[0].w,1080);assert.equal(rects[0].colour,'#11100E','post: BPS warm black page');assert(rects.some(r=>r.colour==='#1B1813'),'discreet alternate rows');
+ assert.equal(rects[0].w,1080);assert(rects.some(r=>r.colour==='rgba(201,169,106,0.07)'),'alternate rows tinted with the logo colour');
 });
 
 test('few players: the responsible gambling band is smaller (64% at 1 player, full size from 10)',async()=>{
@@ -99,7 +99,7 @@ test('few players: the responsible gambling band is smaller (64% at 1 player, fu
 });
 
 test('a short single page is laid out for its own rows: bigger rows, block centred with equal gaps',()=>{
- const f=SOCIAL_FORMATS.square,rowsOf=r=>r.rects.filter(x=>x.x===40&&x.h<120&&['#11100E','#1B1813'].includes(x.colour));
+ const f=SOCIAL_FORMATS.square,rowsOf=r=>r.rects.filter(x=>x.x===40&&x.h<120&&['#202124','#292A2D','#33301F'].includes(x.colour));
  const few=draw(players(4),f,{time:'18:15',name:'BPS'}),full=draw(players(15),f,{time:'18:15',name:'BPS'});
  assert(rowsOf(few)[0].h>rowsOf(full)[0].h,'rows are taller with few players');
  const b=few.images.find(a=>a[0]===band),tableEnd=Math.max(...rowsOf(few).map(x=>x.y+x.h)),above=b[2]-tableEnd,below=1080-(b[2]+b[4]);
@@ -108,15 +108,15 @@ test('a short single page is laid out for its own rows: bigger rows, block centr
  assert.notDeepEqual([...sizes(few)],[...sizes(full)],'bigger text for few players');
 });
 
-test('post pagination: 20 per page, the remainder split over the last two pages',()=>{
- const cases={1:[1],19:[19],20:[20],21:[11,10],29:[15,14],40:[20,20],41:[20,11,10],69:[20,20,15,14],118:[20,20,20,20,19,19],119:[20,20,20,20,20,19],120:[20,20,20,20,20,20],153:[20,20,20,20,20,20,17,16],160:Array(8).fill(20)};
+test('post pagination: always 20 per page, the last page holds the rest',()=>{
+ const cases={1:[1],19:[19],20:[20],21:[20,1],29:[20,9],40:[20,20],69:[20,20,20,9],118:[20,20,20,20,20,18],119:[20,20,20,20,20,19],120:[20,20,20,20,20,20],153:[20,20,20,20,20,20,20,13],160:Array(8).fill(20)};
+ assert.deepEqual(pageSizes(29,20,true),[15,14],'balanced helper still available');
  for(const [n,sizes] of Object.entries(cases)){
-  assert.deepEqual(pageSizes(Number(n),20,true),sizes,n+' players');
+  assert.deepEqual(pageSizes(Number(n),20),sizes,n+' players');
   const pages=socialPages(players(Number(n)),SOCIAL_FORMATS.square);assert.deepEqual(pages.map(p=>p.length),sizes);
   assert.deepEqual(pages.flat().map(p=>p.rank),Array.from({length:Number(n)},(_,k)=>k+1),'order and numbering kept');
  }
- assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.story).map(p=>p.length),[20,9],'Story fills pages in turn');
- assert.deepEqual(pageSizes(0,20,true),[]);
+ assert.deepEqual(pageSizes(0,20),[]);
 });
 
 test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label), exact chips, no flight column',()=>{

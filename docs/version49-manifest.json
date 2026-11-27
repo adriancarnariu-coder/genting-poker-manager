@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "e74fddd6da81e41658b97a4ceeeb362c5694666affd5d86550b87d3b61d71c2a",
-      "bytes": 59354,
+      "sha256": "0e23842fcc755a810ee3260198ad997398112b54a735f8dd7c64852fff18427d",
+      "bytes": 59436,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -293,6 +293,13 @@
     {
       "version": "V52 BPS minimal",
       "description": "Post / Story in a British Poker Series palette: warm black page #11100E with discreet alternate rows #1B1813, ivory #F4F0E7 for the name and players, BPS gold #D6B46D for DAY 2 and the chip leader, warm grey #BCB4A6 for secondary text, thin dark gold rule #7B6237 above the table (original logos and band unchanged). Three-line header: tournament name, DAY 2, '29 Nov · 16:30 · 29 qualified' (empty parts left out); no prize, guarantee or flights in the image. Above the table: CHIP COUNTS SO FAR while flights remain, CHIP COUNTS afterwards; PAGE X OF Y on the right (also on the Story, no corner label). 'Start: 6,000' next to the BB heading. Square post: 20 per page with the remainder split evenly over the last two pages (29 = 15 + 14, 153 = 6 x 20 + 17 + 16).",
+      "files": [
+        "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 day background back",
+      "description": "Post / Story background back to the logo-matched day background with the thin gold frame (rows tinted by the day theme); the BPS text style stays (ivory text, gold DAY 2 and chip leader, warm grey secondary text, dark gold rule, three-line header). Square post back to a fixed 20 players per page (29 = 20 + 9, 153 = 7 x 20 + 13); up to 20 in total on one page, bigger and centred.",
       "files": [
         "dist/model.js"
       ]
