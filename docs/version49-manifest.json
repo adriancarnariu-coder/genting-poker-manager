@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "ac0ecef0f78764936f2b4d39d629a4423f3f7835068b9061b281823651b9b3b3",
-      "bytes": 56804,
+      "sha256": "a317fd8df9361e43ea7b85c0eb39d0591b0d249bd51cf58d19b524503f664507",
+      "bytes": 56398,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -247,6 +247,13 @@
         "dist/model.js",
         "dist/theme.css",
         "dist/view-mode.js"
+      ]
+    },
+    {
+      "version": "V52 clean image",
+      "description": "Post and Story: no qualified-from column and no column headings; short chip counts (874.5K, 1.25M); flights line \"Flights left: 1C–1H\"; no gold frame or tint on the leader row (gold medal stays).",
+      "files": [
+        "dist/model.js"
       ]
     }
   ]

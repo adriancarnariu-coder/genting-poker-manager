@@ -192,7 +192,7 @@ export function headerText(tournament={},all=[],page){
  // "All 8 flights played", or without a total "Flights played: 1A–1F".
  const flightTotal=flightCount(tournament.flights),toPlay=flightsToPlay(flightTotal,all),played=[...new Set(all.map(r=>normalizeFlight(r.flight)).filter(Boolean))].sort();
  const span=letters=>{const out=[];for(let i=0;i<letters.length;){let j=i;while(j+1<letters.length&&letters[j+1].charCodeAt(0)===letters[j].charCodeAt(0)+1)j++;out.push(j-i>=2?'1'+letters[i]+'–1'+letters[j]:letters.slice(i,j+1).map(l=>'1'+l).join(', '));i=j+1;}return out.join(', ');};
- const flightText=flightTotal?(toPlay.length?`${flightTotal-toPlay.length} of ${flightTotal} flights played · to play: `+toPlay.map(letter=>'1'+letter).join(', '):`All ${flightTotal} flights played`):played.length?'Flights played: '+span(played):'';
+ const flightText=flightTotal?(toPlay.length?'Flights left: '+span(toPlay):`All ${flightTotal} flights played`):played.length?'Flights played: '+span(played):'';
  const flights=flightText?[{text:flightText}]:[];
  const lines=[sub,flights,extra].filter(line=>line.length);
  return {name,title,info,sub,extra,flights,lines,pageLabel:page?.total>1?page.number+' / '+page.total:''};
@@ -206,6 +206,8 @@ function drawSegments(c,segments,cx,y,font,max){
  let x=cx-total*scale/2;parts.forEach((part,i)=>{c.fillStyle=part.colour;c.fillText(part.text,x,y,widths[i]*scale);x+=widths[i]*scale;});
 }
 // A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
+// V52 short chip counts for Instagram: 874,500 -> "874.5K", 1,250,000 -> "1.25M".
+export function shortChips(n){if(!Number.isFinite(n))return '';const trim=(v,d)=>String(Number(v.toFixed(d)));if(n>=1e6||Number((n/1e3).toFixed(1))>=1000)return trim(n/1e6,2)+'M';if(n>=1e3)return trim(n/1e3,1)+'K';return String(n);}
 export const BAND_GAP=40,TABLE_EDGE='#5F6368';
 // V51: with only a few players the responsible gambling band is drawn smaller (64% at 1 player, full size from 10),
 // so it does not dominate a short leaderboard.
@@ -450,10 +452,11 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
  const isize=head.info?fit(head.info,20,600,middleW):0,lsize=Math.min(...head.lines.map(line=>fit(line.map(s=>s.text).join('  ·  '),20,600,middleW)));
  const firstRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
- const bb=bigBlind(tournament.bb),rankW=78,flightW=bb?140:160,chipW=bb?260:180,nameX=M+rankW+10,flightX=W-M-chipW-flightW,chipX=W-M-14,nameMax=flightX-nameX-16;
+ // V52 clean table: rank, flag, name and chips only (no flight column, no column headings).
+ const bb=bigBlind(tournament.bb),rankW=78,chipW=bb?260:200,nameX=M+rankW+10,chipX=W-M-14,nameMax=W-M-chipW-nameX-16;
  let band=null;
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
- const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
+ const area=H-format.top-format.bottom,fixed=11,bandH=band?band.h:0,gaps=band?4:3;
  // A single page with fewer players than a full page is laid out for its own rows: bigger rows and text (up to
  // 84 px rows, 34 px text) and the whole block centred with equal gaps. Several pages keep one layout for all.
  const slots=page?format.perPage:Math.max(1,rows.length),few=slots<format.perPage;
@@ -469,23 +472,18 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
  if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
  head.lines.forEach((line,i)=>drawSegments(c,line,W/2,originY+firstRel+i*lstep,'600 '+lsize+'px Montserrat',middleW));
- y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
- put('RANK',M+rankW-12,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});put('PLAYER NAME',nameX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});
- put('QUALIFIED FROM',flightX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});put('CHIP COUNT',chipX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});
- y+=32;
+ y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=14;
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
-  c.fillStyle=leader?LEADER.fill:j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=TABLE_EDGE;c.fillRect(M,top+rowH-5,W-2*M,2);}
-  if(leader){const b=3,h=rowH-3;c.fillStyle=LEADER.gold;c.fillRect(M,top,W-2*M,b);c.fillRect(M,top+h-b,W-2*M,b);c.fillRect(M,top,b,h);c.fillRect(W-M-b,top,b,h);}
+  c.fillStyle=j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=TABLE_EDGE;c.fillRect(M,top+rowH-5,W-2*M,2);}
   const strong=leader?LEADER.text:'#fff';
   const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
   if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
   put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax-fSpace-fGap});
-  put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:'#fff',align:'left',max:flightW-10});
-  put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
-  if(bb){c.font=TABLE_FONT(size);const used=c.measureText(r.chips.toLocaleString('en-GB')).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
+  put(shortChips(r.chips),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
+  if(bb){c.font=TABLE_FONT(size);const used=c.measureText(shortChips(r.chips)).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
   if(r===bubbleRow)bubble=top+rowH-1.5;
  });
  if(bubble!==null){c.fillStyle=ITM.gold;c.fillRect(M,bubble-2,W-2*M,4);}

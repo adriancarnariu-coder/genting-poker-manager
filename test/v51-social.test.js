@@ -43,7 +43,7 @@ test('Story keeps key content out of the top 230 px and the bottom 270 px',()=>{
 test('chip leader, IN THE MONEY and page labels work in the social formats',()=>{
  const f=SOCIAL_FORMATS.square,all=players(50),pages=pageSet(all,f);
  const results=pages.map(({rows,page})=>draw(rows,f,{name:'BPS',time:'18:15',paid:'30'},page));
- assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#33301F').length),[1,0,0]);assert(!results.some(r=>r.text.some(t=>/chip leader/i.test(t.value))));
+ assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#33301F'||(x.colour==='#D4AF37'&&(x.w===3||x.h===3))).length),[0,0,0],'no gold frame or tint on the leader row');assert(!results.some(r=>r.text.some(t=>/chip leader/i.test(t.value))));
  assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#D4AF37'&&x.h===4).length),[0,1,0]);
  assert(!results.some(r=>r.text.some(t=>/ITM/.test(t.value))));
  results.forEach((r,i)=>assert(r.text.some(t=>t.value===`${i+1} / 3`)));
@@ -106,4 +106,13 @@ test('a short single page is laid out for its own rows: bigger rows, block centr
  assert(Math.abs(above-below)<=1,`${above}/${below}`);
  const sizes=r=>new Set(r.text.filter(t=>t.value.startsWith('Player ')).map(t=>t.font));
  assert.notDeepEqual([...sizes(few)],[...sizes(full)],'bigger text for few players');
+});
+
+test('clean post: no flight column, no column headings, short chip counts',async()=>{
+ const {shortChips}=await import('../dist/model.js');
+ assert.deepEqual([874500,900000,1250000,12000,950].map(shortChips),['874.5K','900K','1.25M','12K','950']);
+ const r=draw(players(10).map(p=>({...p,chips:p.chips*1000})),SOCIAL_FORMATS.square,{time:'18:15'});
+ assert(!r.text.some(t=>/^(RANK|PLAYER NAME|QUALIFIED FROM|CHIP COUNT)$/.test(t.value)),'no column headings');
+ assert(!r.text.some(t=>/^Day 1[A-H]$/.test(t.value)),'no qualified-from column');
+ assert(r.text.some(t=>t.value==='10M')&&r.text.some(t=>t.value==='1M'),'short chips');
 });
