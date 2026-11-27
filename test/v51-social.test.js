@@ -90,3 +90,10 @@ test('logo palette and day backgrounds: gold logo gives a warm palette, seven va
  drawSocial({getContext:()=>c2},players(5),genting,{time:''},band,{theme:dayTheme(gold,'2026-11-23')},SOCIAL_FORMATS.square);
  assert.equal(rects[0].w,1080);assert(rects.some(r=>r.colour==='rgba(201,169,106,0.07)'),'alternate rows tinted with the logo colour');
 });
+
+test('few players: the responsible gambling band is smaller (64% at 1 player, full size from 10)',async()=>{
+ const {bandScale}=await import('../dist/model.js');
+ assert.equal(bandScale(1),.64);assert.equal(bandScale(5),.8);assert.equal(bandScale(10),1);assert.equal(bandScale(150),1);
+ const h=n=>{let bh=0;const c={fillRect(){},drawImage(...a){if(a[0]===band)bh=a[4];},beginPath(){},arc(){},fill(){},measureText(v){return {width:String(v).length*10};},fillText(){}};drawSocial({getContext:()=>c},players(n),genting,{time:''},band,{},SOCIAL_FORMATS.square);return bh;};
+ assert(h(2)<h(12));assert(Math.abs(h(12)-44)<1e-9);
+});

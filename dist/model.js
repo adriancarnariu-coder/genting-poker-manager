@@ -202,6 +202,9 @@ function drawSegments(c,segments,cx,y,font,max){
 }
 // A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
 export const BAND_GAP=40,TABLE_EDGE='#5F6368';
+// V51: with only a few players the responsible gambling band is drawn smaller (64% at 1 player, full size from 10),
+// so it does not dominate a short leaderboard.
+export const bandScale=n=>n>=10?1:.6+.04*Math.max(1,n);
 // V51: one typeface for the whole JPEG. The table uses Montserrat (already bundled for the header) instead of Arial.
 const TABLE_FONT=(size,weight=500)=>weight+' '+size+'px Montserrat';
 // Measured on the exported JPEGs (Montserrat, middle baseline): capitals reach 0.52 em above the middle line, descenders 0.45 em below.
@@ -357,7 +360,7 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
   const aspect=naturalWidth/naturalHeight;
   const minimumWidth=64*aspect;
   const previousWidth=Math.min(innerWidth,Math.max(.8*Math.min(innerWidth,Math.max(.75*innerWidth,minimumWidth)),minimumWidth));
-  const width=Math.min(innerWidth,Math.max(48*aspect,previousWidth*.4)*1.2);
+  const width=Math.min(innerWidth,Math.max(48*aspect,previousWidth*.4)*1.2)*bandScale(measureRows.length);
   const height=width/aspect;
   // V51: the band sits centred between the table and the bottom edge (same gap above and below).
   const y=Math.ceil(rowsBottom+BAND_GAP);
@@ -444,7 +447,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  const firstRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
  const bb=bigBlind(tournament.bb),rankW=78,flightW=bb?140:160,chipW=bb?260:180,nameX=M+rankW+10,flightX=W-M-chipW-flightW,chipX=W-M-14,nameMax=flightX-nameX-16;
  let band=null;
- if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44,bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
+ if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
  const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
  const rowH=Math.min(format.maxRow,Math.floor((area-rowHead-bandH-gaps*24-fixed)/format.perPage)),size=Math.max(18,Math.min(28,Math.round(rowH*.5)));
  const showFlags=branding.flags!==false&&all.some(r=>countryCode(r.nationality)),fw=Math.round(size*1.15),fh=Math.round(fw*2/3),fSpace=showFlags?fw+10:0;
