@@ -173,29 +173,29 @@ export const MEDALS={1:'#D4AF37',2:'#C9CDD2',3:'#C88A4A'},MEDAL_INK='#202124';
 function drawMedal(c,x,y,r,colour){c.fillStyle=colour;if(typeof c.arc==='function'&&typeof c.fill==='function'){c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();}else c.fillRect(x-r,y-r,r*2,r*2);}
 // V51 stack in big blinds: optional Day 2 big blind; each stack then shows e.g. "225 BB" in grey before the chips.
 export function bigBlind(value){const s=String(value??'').replace(/[,\s]/g,'');return /^\d{1,9}$/.test(s)&&Number(s)>0?Number(s):0;}
-export function bbLabel(chips,bb){if(!bb)return '';const x=chips/bb;return (x<10?(Math.round(x*10)/10).toLocaleString('en-GB',{maximumFractionDigits:1}):Math.round(x).toLocaleString('en-GB'))+' BB';}
+export function bbLabel(chips,bb){return bb?bbCount(chips,bb)+' BB':'';}
+// Big blinds as a whole number, from the exact chip count (e.g. 915,000 / 4,000 -> 229).
+export const bbCount=(chips,bb)=>bb?Math.round(chips/bb).toLocaleString('en-GB'):'';
 export const BB_STYLE={colour:'#AEB3B9',scale:.85};
 // V51 header text shared by every format: "<name> · Day 2", the date line, then "N qualified · £X prize pool".
 export function headerText(tournament={},all=[],page){
  const name=text(tournament.name),total=page?.totalPlayers??all.length,pool=prizePool(tournament.prizePool);
  const title=name?name+' · Day 2':'Day 2 Leaderboard';
  const info=[displayDate(text(tournament.date)),formatTournamentTime(tournament.time)].filter(Boolean).join(' · ');
- // With a guarantee: "£15,000 of £100,000 GTD" (or "£100,000 GTD" before any prize pool is typed).
- const gtd=prizePool(tournament.gtd),money=gtd?(pool?pool+' of '+gtd+' GTD':gtd+' GTD'):pool?pool+' prize pool':'';
- const sub=[{text:total+' qualified'},...(money?[{text:money,highlight:true}]:[])];
- // Optional fourth line: first prize and min cash, e.g. "1st place £4,015 · min cash £150". Places paid only draws
- // the gold line in the table (not shown in the header, to keep it light).
+ const flightTotal=flightCount(tournament.flights),toPlay=flightsToPlay(flightTotal,all);
+ const span=letters=>{const out=[];for(let i=0;i<letters.length;){let j=i;while(j+1<letters.length&&letters[j+1].charCodeAt(0)===letters[j].charCodeAt(0)+1)j++;out.push(j-i>=2?'1'+letters[i]+'–1'+letters[j]:letters.slice(i,j+1).map(l=>'1'+l).join(', '));i=j+1;}return out.join(', ');};
+ // Prize line: "Prize pool so far: £15,000 · £100,000 guaranteed" (each part only when it is known; "Prize pool:"
+ // once every flight is played).
+ const gtd=prizePool(tournament.gtd),stillPlaying=!flightTotal||toPlay.length>0;
+ const prizeLine=[...(pool?[{text:(stillPlaying?'Prize pool so far: ':'Prize pool: ')+pool,highlight:true}]:[]),...(gtd?[{text:gtd+' guaranteed'}]:[])];
+ // Players line: "29 qualified · Flights remaining: 1C–1H" (flights only while some are still to play).
+ const flights=flightTotal&&toPlay.length?[{text:'Flights remaining: '+span(toPlay)}]:[];
+ const sub=[{text:total+' qualified'},...flights];
+ // Optional line: first prize and min cash, e.g. "1st place £4,015 · min cash £150".
  const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
  const extra=[...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
- // Optional line: flights still to play, e.g. "3 flights to play: 1F, 1G, 1H".
- // Flights line, right under the qualified / prize line: "2 of 8 flights played · to play: 1C, 1D, 1E, 1F, 1G, 1H",
- // "All 8 flights played", or without a total "Flights played: 1A–1F".
- const flightTotal=flightCount(tournament.flights),toPlay=flightsToPlay(flightTotal,all),played=[...new Set(all.map(r=>normalizeFlight(r.flight)).filter(Boolean))].sort();
- const span=letters=>{const out=[];for(let i=0;i<letters.length;){let j=i;while(j+1<letters.length&&letters[j+1].charCodeAt(0)===letters[j].charCodeAt(0)+1)j++;out.push(j-i>=2?'1'+letters[i]+'–1'+letters[j]:letters.slice(i,j+1).map(l=>'1'+l).join(', '));i=j+1;}return out.join(', ');};
- const flightText=flightTotal?(toPlay.length?'Flights left: '+span(toPlay):`All ${flightTotal} flights played`):played.length?'Flights played: '+span(played):'';
- const flights=flightText?[{text:flightText}]:[];
- const lines=[sub,flights,extra].filter(line=>line.length);
- return {name,title,info,sub,extra,flights,lines,pageLabel:page?.total>1?page.number+' / '+page.total:''};
+ const lines=[prizeLine,sub,extra].filter(line=>line.length);
+ return {name,title,info,prizeLine,sub,extra,flights,lines,pageShort:page?.total>1?page.number+'/'+page.total:'',pageLabel:page?.total>1?page.number+' / '+page.total:''};
 }
 // When "<name> · Day 2" does not fit on one line, "Day 2" gets its own line (never a dangling " ·").
 function titleLines(c,head,width){const lines=wrapTournamentName(c,head.title,width);return lines.length<2||!head.name?lines:[...wrapTournamentName(c,head.name,width),'Day 2'];}
@@ -252,7 +252,7 @@ export function dayTheme(palette,date){
   (c,w,H)=>linear(c,0,0,w,0,[[0,hsl(5)],[.5,hsl(13)],[1,hsl(5)]]),
   (c,w,H)=>radial(c,w/2,H,Math.max(w,H)*.9,[[0,hsl(15)],[1,hsl(5)]])
  ];
- return {day,dayName:DAY_NAMES[day],rowA:'rgba(0,0,0,0)',rowB:accent(.07),paint(c,w,H){c.fillStyle=variants[day](c,w,H);c.fillRect(0,0,w,H);if(day===5||day===6){c.fillStyle=accent(.55);c.fillRect(0,0,w,3);c.fillRect(0,H-3,w,3);}}};
+ return {day,dayName:DAY_NAMES[day],base:hsl(5),rowA:'rgba(0,0,0,0)',rowB:accent(.07),paint(c,w,H){c.fillStyle=variants[day](c,w,H);c.fillRect(0,0,w,H);if(day===5||day===6){c.fillStyle=accent(.55);c.fillRect(0,0,w,3);c.fillRect(0,H-3,w,3);}}};
 }
 // V51 country flags next to names. Countries come from the Excel nationality column and are shown only when the
 // player gave GDPR consent (same rule as the full name). Flags are drawn here (no emoji, no downloaded images) in a
@@ -422,8 +422,8 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
 // same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
 // Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
 export const SOCIAL_FORMATS={
- square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:60},
- story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60}
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:15,maxRow:64,band:22},
+ story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60,band:44}
 };
 export function socialPages(rows,format){const out=[];for(let i=0;i<rows.length;i+=format.perPage)out.push(rows.slice(i,i+format.perPage));return out;}
 export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,branding={},format=SOCIAL_FORMATS.square){
@@ -450,13 +450,16 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=titleLines(c,head,middleW);
  while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=titleLines(c,head,middleW);}
  if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
+ // Post: the page indicator sits next to the leaderboard title ("Day 2 · 1/2") instead of the bottom corner.
+ if(format.key==='square'&&head.pageShort)tlines[tlines.length-1]+=' · '+head.pageShort;
  const isize=head.info?fit(head.info,20,600,middleW):0,lsize=Math.min(...head.lines.map(line=>fit(line.map(s=>s.text).join('  ·  '),20,600,middleW)));
  const firstRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
  // V52 clean table: rank, flag, name and chips only (no flight column, no column headings).
- const bb=bigBlind(tournament.bb),rankW=78,chipW=bb?260:200,nameX=M+rankW+10,chipX=W-M-14,nameMax=W-M-chipW-nameX-16;
+ // Columns RANK | PLAYER | BB | CHIPS (BB only when a Day 2 big blind is set); BB and chips right-aligned, apart.
+ const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,nameMax=(bb?bbX-bbW:chipX-chipW)-nameX-16;
  let band=null;
- if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
- const area=H-format.top-format.bottom,fixed=11,bandH=band?band.h:0,gaps=band?4:3;
+ if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=(format.band||44)*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
+ const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
  // A single page with fewer players than a full page is laid out for its own rows: bigger rows and text (up to
  // 84 px rows, 34 px text) and the whole block centred with equal gaps. Several pages keep one layout for all.
  const slots=page?format.perPage:Math.max(1,rows.length),few=slots<format.perPage;
@@ -472,7 +475,10 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
  if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
  head.lines.forEach((line,i)=>drawSegments(c,line,W/2,originY+firstRel+i*lstep,'600 '+lsize+'px Montserrat',middleW));
- y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=14;
+ y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
+ const headStyle={size:15,weight:700,arial:true,colour:'#C5C8CE'};
+ put('RANK',M+rankW-12,y+14,{...headStyle,align:'right'});put('PLAYER',nameX,y+14,{...headStyle,align:'left'});if(bb)put('BB',bbX,y+14,{...headStyle,align:'right'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
+ y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
@@ -482,12 +488,12 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
   if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
   put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax-fSpace-fGap});
-  put(shortChips(r.chips),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
-  if(bb){c.font=TABLE_FONT(size);const used=c.measureText(shortChips(r.chips)).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
+  put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
+  if(bb)put(bbCount(r.chips,bb),bbX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:BB_STYLE.colour,align:'right',max:bbW});
   if(r===bubbleRow)bubble=top+rowH-1.5;
  });
  if(bubble!==null){c.fillStyle=ITM.gold;c.fillRect(M,bubble-2,W-2*M,4);}
- if(band)c.drawImage(responsibleBand,band.x,band.y,band.w,band.h);
- if(head.pageLabel)put(head.pageLabel,W-M,band?band.y+band.h/2:H-format.bottom-gap/2,{size:20,weight:700,colour:'#9AA0A6',align:'right'});
+ if(band){if(rowTheme?.base){const pad=Math.min(gap*.6,28);c.fillStyle=rowTheme.base;c.fillRect(0,band.y-pad,W,band.h+2*pad);}c.drawImage(responsibleBand,band.x,band.y,band.w,band.h);}
+ if(head.pageLabel&&format.key!=='square')put(head.pageLabel,W-M,band?band.y+band.h/2:H-format.bottom-gap/2,{size:20,weight:700,colour:'#9AA0A6',align:'right'});
  return canvas;
 }

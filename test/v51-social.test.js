@@ -13,9 +13,9 @@ function draw(rows,format,tournament={name:'BPS Main Event',date:'2026-11-24',ti
 const pageSet=(all,format)=>{const pages=socialPages(all,format);return pages.map((rows,i)=>({rows,page:pages.length>1?{number:i+1,total:pages.length,totalPlayers:all.length,measureRows:all}:undefined}));};
 
 test('exact sizes: post 1080 × 1080 with 20 per page, Story 1080 × 1920 with 20 per page',()=>{
- assert.deepEqual([SOCIAL_FORMATS.square.width,SOCIAL_FORMATS.square.height,SOCIAL_FORMATS.square.perPage],[1080,1080,20]);
+ assert.deepEqual([SOCIAL_FORMATS.square.width,SOCIAL_FORMATS.square.height,SOCIAL_FORMATS.square.perPage],[1080,1080,15]);
  assert.deepEqual([SOCIAL_FORMATS.story.width,SOCIAL_FORMATS.story.height,SOCIAL_FORMATS.story.perPage],[1080,1920,20]);
- assert.deepEqual(socialPages(players(45),SOCIAL_FORMATS.square).map(p=>p.length),[20,20,5]);
+ assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[15,14],'29 players: 1-15 then 16-29');
  assert.deepEqual(socialPages(players(40),SOCIAL_FORMATS.story).map(p=>p.length),[20,20]);
  for(const f of Object.values(SOCIAL_FORMATS)){const {canvas}=draw(players(f.perPage),f);assert.equal(canvas.width,f.width);assert.equal(canvas.height,f.height);}
 });
@@ -43,10 +43,10 @@ test('Story keeps key content out of the top 230 px and the bottom 270 px',()=>{
 test('chip leader, IN THE MONEY and page labels work in the social formats',()=>{
  const f=SOCIAL_FORMATS.square,all=players(50),pages=pageSet(all,f);
  const results=pages.map(({rows,page})=>draw(rows,f,{name:'BPS',time:'18:15',paid:'30'},page));
- assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#33301F'||(x.colour==='#D4AF37'&&(x.w===3||x.h===3))).length),[0,0,0],'no gold frame or tint on the leader row');assert(!results.some(r=>r.text.some(t=>/chip leader/i.test(t.value))));
- assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#D4AF37'&&x.h===4).length),[0,1,0]);
+ assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#33301F'||(x.colour==='#D4AF37'&&(x.w===3||x.h===3))).length),[0,0,0,0],'no gold frame or tint on the leader row');assert(!results.some(r=>r.text.some(t=>/chip leader/i.test(t.value))));
+ assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#D4AF37'&&x.h===4).length),[0,1,0,0]);
  assert(!results.some(r=>r.text.some(t=>/ITM/.test(t.value))));
- results.forEach((r,i)=>assert(r.text.some(t=>t.value===`${i+1} / 3`)));
+ results.forEach((r,i)=>{assert(r.text.some(t=>t.value.endsWith(`Day 2 · ${i+1}/4`)),'page indicator next to the title');assert(!r.text.some(t=>/^\d+ \/ \d+$/.test(t.value)),'no corner page label on the post');});
  assert(results.every(r=>r.text.some(t=>t.value==='18:15')&&r.text.some(t=>t.value==='50 qualified')));
  assert(results.every(r=>r.rects.filter(x=>x.colour==='#202124'||x.colour==='#292A2D'||x.colour==='#33301F').map(x=>x.h).filter(h=>h<100).every((h,_,a)=>h===a[0])),'same row height on every page');
 });
@@ -67,8 +67,8 @@ test('top 3 discs also appear in the post and Story formats, only on the page ho
 test('big blinds appear next to every stack in the post and Story formats',()=>{
  for(const f of Object.values(SOCIAL_FORMATS)){
   const r=draw(players(10),f,{time:'',bb:'2000'});
-  assert.deepEqual(r.text.filter(t=>t.value.endsWith(' BB')).map(t=>t.value),Array.from({length:10},(_,i)=>((10-i)*1000/2000).toLocaleString('en-GB',{maximumFractionDigits:1})+' BB'));
-  assert(!draw(players(10),f,{time:''}).text.some(t=>t.value.endsWith(' BB')));
+  assert(r.text.some(t=>t.value==='BB'),'BB heading');for(let i=0;i<10;i++)assert(r.text.some(t=>t.value===String(Math.round((10-i)*1000/2000))),'whole BB '+i);
+  assert(!draw(players(10),f,{time:''}).text.some(t=>t.value==='BB'),'no BB column without a big blind');
  }
 });
 
@@ -95,7 +95,7 @@ test('few players: the responsible gambling band is smaller (64% at 1 player, fu
  const {bandScale}=await import('../dist/model.js');
  assert.equal(bandScale(1),.64);assert.equal(bandScale(5),.8);assert.equal(bandScale(10),1);assert.equal(bandScale(150),1);
  const h=n=>{let bh=0;const c={fillRect(){},drawImage(...a){if(a[0]===band)bh=a[4];},beginPath(){},arc(){},fill(){},measureText(v){return {width:String(v).length*10};},fillText(){}};drawSocial({getContext:()=>c},players(n),genting,{time:''},band,{},SOCIAL_FORMATS.square);return bh;};
- assert(h(2)<h(12));assert(Math.abs(h(12)-44)<1e-9);
+ assert(h(2)<h(12));assert(Math.abs(h(12)-22)<1e-9,'post band at half the previous 44 px');
 });
 
 test('a short single page is laid out for its own rows: bigger rows, block centred with equal gaps',()=>{
@@ -108,11 +108,13 @@ test('a short single page is laid out for its own rows: bigger rows, block centr
  assert.notDeepEqual([...sizes(few)],[...sizes(full)],'bigger text for few players');
 });
 
-test('clean post: no flight column, no column headings, short chip counts',async()=>{
- const {shortChips}=await import('../dist/model.js');
- assert.deepEqual([874500,900000,1250000,12000,950].map(shortChips),['874.5K','900K','1.25M','12K','950']);
- const r=draw(players(10).map(p=>({...p,chips:p.chips*1000})),SOCIAL_FORMATS.square,{time:'18:15'});
- assert(!r.text.some(t=>/^(RANK|PLAYER NAME|QUALIFIED FROM|CHIP COUNT)$/.test(t.value)),'no column headings');
- assert(!r.text.some(t=>/^Day 1[A-H]$/.test(t.value)),'no qualified-from column');
- assert(r.text.some(t=>t.value==='10M')&&r.text.some(t=>t.value==='1M'),'short chips');
+test('post template: RANK | PLAYER | BB | CHIPS headings on every page, exact chips, no flight column',()=>{
+ const f=SOCIAL_FORMATS.square,all=players(29).map(p=>({...p,chips:p.chips*1000+500})),pages=pageSet(all,f);
+ pages.forEach(({rows,page})=>{const r=draw(rows,f,{time:'18:15',bb:'2000'},page);
+  for(const h of ['RANK','PLAYER','BB','CHIPS'])assert(r.text.some(t=>t.value===h),h+' heading on page '+page.number);
+  assert(!r.text.some(t=>/^Day 1[A-H]$/.test(t.value)),'no qualified-from column');
+  const bbText=r.text.find(t=>t.value==='BB'),chips=r.text.find(t=>t.value==='CHIPS');assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');
+ });
+ const r=draw(pages[0].rows,f,{time:'18:15'},pages[0].page);
+ assert(r.text.some(t=>t.value===all[0].chips.toLocaleString('en-GB'))&&all[0].chips.toLocaleString('en-GB').includes(','),'exact chips with thousands separator');assert(!r.text.some(t=>t.value==='BB'),'no BB heading without a big blind');
 });

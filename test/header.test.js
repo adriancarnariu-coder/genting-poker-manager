@@ -81,8 +81,10 @@ test('invalid entered times block export and valid 24-hour boundaries work',()=>
 
 test('saved colon times and newly entered dot times display identically without changing the time',()=>{for(const [input,expected] of [['18:30','18:30'],['00:00','00:00'],['23:59','23:59'],['18.30','18:30'],['',''],['24.00','24.00']])assert.equal(formatTournamentTime(input),expected);});
 
-test('flights line appears under the qualified line even without the number of flights',()=>{
- const r=render(3,{date:'2026-12-03'});
- const qualified=r.text.find(t=>t.value==='3 qualified'),flights=r.text.find(t=>t.value==='Flights played: 1A');
- assert(qualified&&flights);assert(flights.y>qualified.y);
+test('flights line only while flights are left, under the qualified line',()=>{
+ const r=render(3,{date:'2026-12-03',flights:'3'});
+ const qualified=r.text.find(t=>t.value==='3 qualified'),flights=r.text.find(t=>t.value==='Flights remaining: 1B, 1C');
+ assert(qualified&&flights);assert.equal(flights.y,qualified.y,'flights remaining on the qualified line');
+ assert(!render(3,{date:'2026-12-03'}).text.some(t=>/^Flights/.test(t.value)),'no total: no line');
+ assert(!render(3,{date:'2026-12-03',flights:'1'}).text.some(t=>/^Flights|flights played/.test(t.value)),'all played: no line');
 });

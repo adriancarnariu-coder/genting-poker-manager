@@ -48,7 +48,7 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "5d2ba92637c95bbd42cfbc49e7a2ef90fcabc8ae6d14c75c6c9ea6645c013430",
+      "sha256": "42c1f45015c9d687a9c4355736cc1bccd980b5454de85c1f70179eb52b836ad4",
       "bytes": 13604,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "a317fd8df9361e43ea7b85c0eb39d0591b0d249bd51cf58d19b524503f664507",
-      "bytes": 56398,
+      "sha256": "d3f9171021eb61dacc837995f972da99f0ffb6e73df0342e4358b90c7466970b",
+      "bytes": 56906,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -250,10 +250,11 @@
       ]
     },
     {
-      "version": "V52 clean image",
-      "description": "Post and Story: no qualified-from column and no column headings; short chip counts (874.5K, 1.25M); flights line \"Flights left: 1C–1H\"; no gold frame or tint on the leader row (gold medal stays).",
+      "version": "V52 BPS200 template",
+      "description": "Header: \"Prize pool so far: £X · £Y guaranteed\" and \"N qualified · Flights remaining: 1C–1H\" on separate lines (missing values omitted). Post and Story tables: RANK | PLAYER | BB | CHIPS headings on every page, no qualified-from column, exact chip counts (915,000), BB as a whole number in its own right-aligned column, flags and top 3 medals kept, no gold frame on the leader row. Instagram post 1080 x 1080: 15 players per page, page indicator next to the title (Day 2 · 1/2), responsible gambling band at half size on a uniform dark strip. Other formats keep their pagination.",
       "files": [
-        "dist/model.js"
+        "dist/model.js",
+        "dist/index.html"
       ]
     }
   ]
