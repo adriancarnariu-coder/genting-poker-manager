@@ -19,13 +19,13 @@ test('ready message uses complete total with singular and plural',()=>{
 
 test('series presets: only repeatable details, update by name, sorted, bad storage ignored',async()=>{
  const {makePreset,parsePresets,upsertPreset,removePreset,PRESET_FIELDS}=await import('../dist/view-mode.js');
- assert.deepEqual(PRESET_FIELDS,['name','time','flights','bb','format']);
+ assert.deepEqual(PRESET_FIELDS,['name','time','flights','bb','gtd','format']);
  const bps=makePreset(' BPS ',{name:'BPS Main Event',time:'18:15',flights:'8',bb:'4000',format:'square',date:'2026-11-24',prizePool:'14250'});
- assert.deepEqual(bps,{label:'BPS',values:{name:'BPS Main Event',time:'18:15',flights:'8',bb:'4000',format:'square'}},'date and prize money are not stored');
+ assert.deepEqual(bps,{label:'BPS',values:{name:'BPS Main Event',time:'18:15',flights:'8',bb:'4000',gtd:'',format:'square'}},'date and prize money are not stored');
  assert.throws(()=>makePreset('  ',{}),/Enter a name/);
  let list=upsertPreset([],bps);list=upsertPreset(list,makePreset('Monday Redtooth',{name:'Monday Redtooth'}));list=upsertPreset(list,makePreset('bps',{name:'BPS High Roller'}));
  assert.deepEqual(list.map(p=>[p.label,p.values.name]),[['bps','BPS High Roller'],['Monday Redtooth','Monday Redtooth']]);
  assert.deepEqual(removePreset(list,'bps').map(p=>p.label),['Monday Redtooth']);
  assert.deepEqual(parsePresets('not json'),[]);assert.deepEqual(parsePresets('{"a":1}'),[]);
- assert.deepEqual(parsePresets(JSON.stringify([{label:'X',values:{name:'Y',evil:'<b>'}},{label:'',values:{}},null])),[{label:'X',values:{name:'Y',time:'',flights:'',bb:'',format:''}}]);
+ assert.deepEqual(parsePresets(JSON.stringify([{label:'X',values:{name:'Y',evil:'<b>'}},{label:'',values:{}},null])),[{label:'X',values:{name:'Y',time:'',flights:'',bb:'',gtd:'',format:''}}]);
 });

@@ -6,8 +6,8 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "fe8ba4fc55eeee062fbdce51ab8862bf695f0dce38c5c8c94fc753ff341920e3",
-      "bytes": 53263,
+      "sha256": "156eae345ca395c18fa67f4682b3a801f10e923a6ae170c05dd1516c5ab0d91a",
+      "bytes": 53430,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
       "lineEndingsOnly": false
     },
@@ -48,8 +48,8 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "400d1d9021ffc2b200d515a4085d0f8e789d7f7be7e049969e78efa13d594d3a",
-      "bytes": 13449,
+      "sha256": "ea0f076cdec240b1e2417bc3e57aec46bc7a5d35f2f7fccbfd39dd42237b0d55",
+      "bytes": 13585,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
     },
@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "53687b6c5c2d85d2fba7ccbb2992c98c9ccda28a1ac789e08afeb1362a9c69c8",
-      "bytes": 55194,
+      "sha256": "3fca790881e778b961dfa682b005a993cf619819f6e7bc847249a24721c11f62",
+      "bytes": 55429,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -97,8 +97,8 @@
     },
     {
       "path": "dist/session-backup.js",
-      "sha256": "68c20363098431964effbb00e1f4aa8b7ee1d51c844e0044995d2120127475ba",
-      "bytes": 5601,
+      "sha256": "b94770c60e6cb050c8fa01268b6b275956cd770f5f7802250dc6113a6090f641",
+      "bytes": 5607,
       "localDeploymentAssetSha256": "c34ad48563a990579247dbdfc0b9c7c27b1f99ef2314e9f068b71a7068de945a",
       "lineEndingsOnly": false
     },
@@ -142,8 +142,8 @@
     },
     {
       "path": "dist/view-mode.js",
-      "sha256": "7e0edf5145428e19b7962024013ab4ea620b54935f6252663980bcc5718f8abf",
-      "bytes": 2293,
+      "sha256": "ef20c9d902a9b7171f5ae3c6c834b47c94f346063a83379dc787286f68c4a03e",
+      "bytes": 2299,
       "localDeploymentAssetSha256": "a3230a064e5109808a7d0d14f55b0b4ef646fb18d53c0ca387f536c3cdac9423",
       "lineEndingsOnly": false
     }
@@ -238,7 +238,7 @@
     },
     {
       "version": "V51 multi-page leaderboard",
-      "description": "At most 20 players per column and 40 per JPEG page; pages filled to 40 in rank order (120 = 3 pages, up to 160 = 4; more still export), every page the same size and type. Header between the logos: \"<name> · Day 2\", date and time, then \"N qualified · £X prize pool\" (prize pool optional). Equal visible gaps above the header, between header and table, between table and responsible gambling band and under the band (Story: inside 250 px top and bottom safe zones); thin line under the last row. Chip leader row framed in gold; top 3 gold, silver and bronze discs. Optional 1st place prize and min cash: \"1st place £X · min cash £Y\" line in the header; places paid draws a plain gold line under the last paid place (not written in the header). Optional Day 2 big blind shows each stack in BB. Formats: full leaderboard, Post 1080 x 1080 (15 per page) and Story 1080 x 1920 (20 per page, Instagram safe zones). Page number at the bottom right, numbered filenames, page switcher, download all pages, share all pages together. Tournament fields in rows across the page (two columns on phones). Checks before export: plain warnings above GENERATE (missing name or date, invalid amounts, prizes that do not add up, places paid not below the qualified count, stacks under 1 BB); they never block the export. BB text 85% of the name size. Session backups keep the new optional fields; older backups still restore. Flights A-H; optional \"Flights in this event\" (1-8) shows played and still-to-play flights under the field and adds \"N flights to play: 1F, 1G, 1H\" to the header. Ties: equal stacks share the same place (1, 2, 2, 4) and are listed alphabetically, independent of import order. One typeface: the table text uses Montserrat (bundled) instead of Arial. Summary before export: players and chips per flight, and how many names the JPEG shows in full or as initials. Phone pass: larger native upload control (kept directly tappable for Android) plus drag and drop on desktop, 44 px touch targets, players as cards under 600 px. Tournament history: save the current tournament on this device (same name and date updates it), open it again with review and undo, delete with a second confirmation; up to 50 kept, stored in this browser only. Shorter interface text; phone and save help stays in the collapsible panels. Series presets: save the repeatable details of a series (name, start time, flights, Day 2 big blind, image format) and fill them with one choice; stored in this browser. Background matched to the tournament logo (optional): colours taken from the logo, seven dark variants Monday to Sunday chosen by the tournament date; Genting dark grey stays the default. Country flags next to names (only with GDPR consent; drawn in the app, about 60 countries; can be switched off). Simple interface header: one title, no logo.",
+      "description": "At most 20 players per column and 40 per JPEG page; pages filled to 40 in rank order (120 = 3 pages, up to 160 = 4; more still export), every page the same size and type. Header between the logos: \"<name> · Day 2\", date and time, then \"N qualified · £X prize pool\" (prize pool optional). Equal visible gaps above the header, between header and table, between table and responsible gambling band and under the band (Story: inside 250 px top and bottom safe zones); thin line under the last row. Chip leader row framed in gold; top 3 gold, silver and bronze discs. Optional 1st place prize and min cash: \"1st place £X · min cash £Y\" line in the header; places paid draws a plain gold line under the last paid place (not written in the header). Optional Day 2 big blind shows each stack in BB. Formats: full leaderboard, Post 1080 x 1080 (15 per page) and Story 1080 x 1920 (20 per page, Instagram safe zones). Page number at the bottom right, numbered filenames, page switcher, download all pages, share all pages together. Tournament fields in rows across the page (two columns on phones). Checks before export: plain warnings above GENERATE (missing name or date, invalid amounts, prizes that do not add up, places paid not below the qualified count, stacks under 1 BB); they never block the export. BB text 85% of the name size. Session backups keep the new optional fields; older backups still restore. Flights A-H; optional \"Flights in this event\" (1-8) shows played and still-to-play flights under the field and adds \"N flights to play: 1F, 1G, 1H\" to the header. Ties: equal stacks share the same place (1, 2, 2, 4) and are listed alphabetically, independent of import order. One typeface: the table text uses Montserrat (bundled) instead of Arial. Summary before export: players and chips per flight, and how many names the JPEG shows in full or as initials. Phone pass: larger native upload control (kept directly tappable for Android) plus drag and drop on desktop, 44 px touch targets, players as cards under 600 px. Tournament history: save the current tournament on this device (same name and date updates it), open it again with review and undo, delete with a second confirmation; up to 50 kept, stored in this browser only. Shorter interface text; phone and save help stays in the collapsible panels. Series presets: save the repeatable details of a series (name, start time, flights, Day 2 big blind, image format) and fill them with one choice; stored in this browser. Background matched to the tournament logo (optional): colours taken from the logo, seven dark variants Monday to Sunday chosen by the tournament date; Genting dark grey stays the default. Country flags next to names (only with GDPR consent; drawn in the app, about 60 countries; can be switched off). Simple interface header: one title, no logo. Guarantee (GTD): header shows \"£15,000 of £100,000 GTD\"; kept in presets and backups.",
       "files": [
         "dist/app.js",
         "dist/branding.js",

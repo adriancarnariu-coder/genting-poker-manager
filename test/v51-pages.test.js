@@ -257,3 +257,15 @@ test('flags: country names, demonyms and codes map to flags; shown only with a c
  assert(x(withFlag)>x(noCountry),'name moves right to make room for the flag');assert.equal(x(off),x(noCountry),'flags can be switched off');
  assert(withFlag.rects.some(r=>r.colour==='#002B7F'),'Romanian blue drawn');assert(!withFlag.text.some(t=>/Romania|ROU/.test(t.value)),'no country text, only the flag');
 });
+
+test('guarantee: "£15,000 of £100,000 GTD", GTD alone, plain prize pool without GTD; works with the flights line',()=>{
+ const rows=['A','B'].flatMap((f,k)=>Array.from({length:3},(_,i)=>({rank:k*3+i+1,name:'P'+f+i,flight:'Day 1'+f,chips:1000-k*3-i})));
+ assert.deepEqual(headerText({prizePool:'15000',gtd:'100000'},rows).sub,[{text:'6 qualified'},{text:'£15,000 of £100,000 GTD',highlight:true}]);
+ assert.deepEqual(headerText({gtd:'100,000'},rows).sub,[{text:'6 qualified'},{text:'£100,000 GTD',highlight:true}]);
+ assert.deepEqual(headerText({prizePool:'15000'},rows).sub,[{text:'6 qualified'},{text:'£15,000 prize pool',highlight:true}]);
+ const h=headerText({prizePool:'15000',gtd:'100000',flights:'8'},rows);
+ assert.deepEqual(h.flights,[{text:'6 flights to play: 1C, 1D, 1E, 1F, 1G, 1H'}]);assert.equal(h.lines.length,2);
+ const r=render2(rows,undefined,{name:'BPS',prizePool:'15000',gtd:'100000',flights:'8'});
+ for(const v of ['6 qualified','£15,000 of £100,000 GTD','6 flights to play: 1C, 1D, 1E, 1F, 1G, 1H'])assert(r.text.includes(v),v);
+ assert(exportChecks({name:'X',date:'2026-11-24',gtd:'lots'},rows).some(m=>/Guarantee \(GTD\) is not a valid amount/.test(m)));
+});

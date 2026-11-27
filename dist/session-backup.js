@@ -32,7 +32,7 @@ export function parseSessionBackup(value){
  const extras=Object.fromEntries(BACKUP_EXTRA_FIELDS.filter(field=>typeof details[field]==='string').map(field=>[field,details[field]]));
  return {files:data.files,tournament:{name:details.name,date:details.date,time:formatTournamentTime(details.time),...extras},createdAt:typeof data.createdAt==='string'?data.createdAt:''};
 }
-export const BACKUP_EXTRA_FIELDS=['paid','flights','bb','prizePool','firstPrize','minCash'];
+export const BACKUP_EXTRA_FIELDS=['paid','flights','bb','prizePool','gtd','firstPrize','minCash'];
 export function serializeSessionBackup(files,tournament){
  const value=JSON.stringify({application:'genting-poker-manager',version:1,createdAt:new Date().toISOString(),tournament,files});
  parseSessionBackup(value);return value;

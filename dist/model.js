@@ -180,7 +180,9 @@ export function headerText(tournament={},all=[],page){
  const name=text(tournament.name),total=page?.totalPlayers??all.length,pool=prizePool(tournament.prizePool);
  const title=name?name+' · Day 2':'Day 2 Leaderboard';
  const info=[displayDate(text(tournament.date)),formatTournamentTime(tournament.time)].filter(Boolean).join(' · ');
- const sub=[{text:total+' qualified'},...(pool?[{text:pool+' prize pool',highlight:true}]:[])];
+ // With a guarantee: "£15,000 of £100,000 GTD" (or "£100,000 GTD" before any prize pool is typed).
+ const gtd=prizePool(tournament.gtd),money=gtd?(pool?pool+' of '+gtd+' GTD':gtd+' GTD'):pool?pool+' prize pool':'';
+ const sub=[{text:total+' qualified'},...(money?[{text:money,highlight:true}]:[])];
  // Optional fourth line: first prize and min cash, e.g. "1st place £4,015 · min cash £150". Places paid only draws
  // the gold line in the table (not shown in the header, to keep it light).
  const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
@@ -212,7 +214,7 @@ export function exportChecks(t={},rows=[]){
  if(!text(t.date))out.push('No date: the date line will be left out.');
  if(typed(t.paid)&&!paid)out.push('Places paid is not a whole number, so it will not be shown.');
  if(typed(t.bb)&&!bb)out.push('Day 2 big blind is not a whole number, so BB will not be shown.');
- for(const [key,label] of [['prizePool','Prize pool'],['firstPrize','1st place prize'],['minCash','Min cash']])if(typed(t[key])&&money(t[key])===null)out.push(label+' is not a valid amount, so it will not be shown.');
+ for(const [key,label] of [['prizePool','Prize pool'],['gtd','Guarantee (GTD)'],['firstPrize','1st place prize'],['minCash','Min cash']])if(typed(t[key])&&money(t[key])===null)out.push(label+' is not a valid amount, so it will not be shown.');
  if(paid&&n&&paid>=n)out.push(`Places paid (${paid}) is not lower than the ${n} qualified players, so no gold line is drawn.`);
  if(pool!==null&&first!==null&&first>pool)out.push('1st place prize is higher than the prize pool.');
  if(first!==null&&min!==null&&min>first)out.push('Min cash is higher than the 1st place prize.');
