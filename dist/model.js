@@ -482,8 +482,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // - number of flights not set: CHIP COUNTS SO FAR without a count. PAGE 1 OF 6 on the right.
  const left=head.flights.length?flightsToPlay(flightCount(tournament.flights),all).length:0,statusText=head.final?'FINAL CHIP COUNTS':'CHIP COUNTS SO FAR',remainingText=left?`  ·  ${left} flight${left===1?'':'s'} remaining`:'',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:'',labelRow=30;
  // Columns: rank number / medal (no RANK label), flag, PLAYER, BB (when a Day 2 big blind is set), CHIPS.
- // The flight each player qualified from ("1C") sits after the name, before BB, with no column heading.
- const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,flightX=(bb?bbX-bbW:chipX-chipW)-56,nameMax=flightX-nameX-16;
+ // Columns: rank, flag, name, the flight each player qualified from ("Day 1C", no heading), BB, chips.
+ const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,flightEnd=(bb?bbX-bbW:chipX-chipW)-14;
  let band=null;
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=(format.band||44)*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
  const area=H-format.top-format.bottom,fixed=41+labelRow,bandH=band?band.h:0,gaps=band?4:3;
@@ -534,6 +534,9 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  if(bb)put('BB',bbX,y+14,{size:Math.round(size*BB_STYLE.scale),weight:600,colour:P.grey,align:'right'});
  y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
+ // "Day 1A" written as before, in the row text size and colour, in a column sized for the widest label ("Day 1W" as a safe width)
+ // and ending before the BB values; names stop 18 px before it.
+ c.font=TABLE_FONT(size);c.letterSpacing='0px';const flightW=Math.ceil(c.measureText('Day 1W').width),flightX=flightEnd-flightW,nameMax=flightX-nameX-18;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
   c.fillStyle=j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=P.rule;c.fillRect(M,top+rowH-4,W-2*M,1);}
@@ -541,8 +544,9 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
   if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
-  put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:P.ivory,align:'left',max:nameMax-fSpace-fGap});
-  const flightLetter=normalizeFlight(r.flight);if(flightLetter)put('1'+flightLetter,flightX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:P.grey,align:'left',max:50});
+  // A name too long for its space gets a smaller font (down to 75%) before it is squeezed.
+  {const room=nameMax-fSpace-fGap,name=String(r.name);c.font=TABLE_FONT(size);c.letterSpacing='0px';const w=c.measureText(name).width,nsize=w>room?Math.max(Math.round(size*.75),Math.floor(size*room/w)):size;put(name,nameX+fGap+fSpace,mid,{size:nsize,arial:true,colour:P.ivory,align:'left',max:room});}
+  if(normalizeFlight(r.flight))put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:P.ivory,align:'left',max:flightW});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
   if(bb)put(bbCount(r.chips,bb),bbX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:P.grey,align:'right',max:bbW});
   if(r===bubbleRow)bubble=top+rowH-1.5;
