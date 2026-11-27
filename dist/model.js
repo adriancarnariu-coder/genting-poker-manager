@@ -425,11 +425,11 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
 // same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
 // Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
 export const SOCIAL_FORMATS={
- square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4,balanceLast:true},
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4},
  story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60,band:44}
 };
-// Post: full pages of 20 first, then the remainder split evenly over the last two pages (odd: the second-to-last
-// page gets one more), e.g. 29 = 15 + 14, 69 = 20 + 20 + 15 + 14, 118 = 4 x 20 + 19 + 19. Other formats fill pages in turn.
+// Pages are always filled with 20 players in turn (29 = 20 + 9, 153 = 7 x 20 + 13); fewer than 20 in total fit on one
+// page laid out bigger and centred. balanceLast (not used now) would split the remainder over the last two pages.
 export function pageSizes(n,per,balanceLast=false){if(n<=0)return [];const pages=Math.ceil(n/per);if(pages===1)return [n];if(!balanceLast)return Array.from({length:pages},(_,i)=>Math.min(per,n-i*per));const rest=n-per*(pages-2);return [...Array(pages-2).fill(per),Math.ceil(rest/2),Math.floor(rest/2)];}
 export function socialPages(rows,format){const out=[];let i=0;for(const size of pageSizes(rows.length,format.perPage,!!format.balanceLast)){out.push(rows.slice(i,i+size));i+=size;}return out;}
 export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,branding={},format=SOCIAL_FORMATS.square){

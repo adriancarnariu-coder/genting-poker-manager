@@ -15,7 +15,7 @@ const pageSet=(all,format)=>{const pages=socialPages(all,format);return pages.ma
 test('exact sizes: post 1080 × 1080 with 20 per page, Story 1080 × 1920 with 20 per page',()=>{
  assert.deepEqual([SOCIAL_FORMATS.square.width,SOCIAL_FORMATS.square.height,SOCIAL_FORMATS.square.perPage],[1080,1080,20]);
  assert.deepEqual([SOCIAL_FORMATS.story.width,SOCIAL_FORMATS.story.height,SOCIAL_FORMATS.story.perPage],[1080,1920,20]);
- assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[15,14],'29 players: 1-15 then 16-29');
+ assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[20,9],'29 players: 1-20 then 21-29');
  assert.deepEqual(socialPages(players(40),SOCIAL_FORMATS.story).map(p=>p.length),[20,20]);
  for(const f of Object.values(SOCIAL_FORMATS)){const {canvas}=draw(players(f.perPage),f);assert.equal(canvas.width,f.width);assert.equal(canvas.height,f.height);}
 });
@@ -108,10 +108,11 @@ test('a short single page is laid out for its own rows: bigger rows, block centr
  assert.notDeepEqual([...sizes(few)],[...sizes(full)],'bigger text for few players');
 });
 
-test('post pagination: 20 per page, the remainder split over the last two pages',()=>{
- const cases={1:[1],20:[20],21:[11,10],29:[15,14],40:[20,20],41:[20,11,10],69:[20,20,15,14],118:[20,20,20,20,19,19],119:[20,20,20,20,20,19],120:[20,20,20,20,20,20],153:[20,20,20,20,20,20,17,16],160:Array(8).fill(20)};
+test('post pagination: always 20 per page, the last page holds the rest',()=>{
+ const cases={1:[1],19:[19],20:[20],21:[20,1],29:[20,9],40:[20,20],69:[20,20,20,9],118:[20,20,20,20,20,18],119:[20,20,20,20,20,19],120:[20,20,20,20,20,20],153:[20,20,20,20,20,20,20,13],160:Array(8).fill(20)};
+ assert.deepEqual(pageSizes(29,20,true),[15,14],'balanced helper still available');
  for(const [n,sizes] of Object.entries(cases)){
-  assert.deepEqual(pageSizes(Number(n),20,true),sizes,n+' players');
+  assert.deepEqual(pageSizes(Number(n),20),sizes,n+' players');
   const pages=socialPages(players(Number(n)),SOCIAL_FORMATS.square);assert.deepEqual(pages.map(p=>p.length),sizes);
   assert.deepEqual(pages.flat().map(p=>p.rank),Array.from({length:Number(n)},(_,k)=>k+1),'order and numbering kept');
  }
