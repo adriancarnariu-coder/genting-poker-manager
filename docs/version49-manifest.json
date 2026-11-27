@@ -6,8 +6,8 @@
   "files": [
     {
       "path": "dist/app.js",
-      "sha256": "d90e39e24b3e9108005368f528cebf5f556a8ad8928a8f62a155362fad63799f",
-      "bytes": 53442,
+      "sha256": "cf818bbf01119ca3b2fcc2b2b95711a73196c5501ddf2e909a04dff0d74524c5",
+      "bytes": 53601,
       "localDeploymentAssetSha256": "af65520447e7de753131dfc7e1283e9be31a7294d4dca6bb8c8a85635a2a68dd",
       "lineEndingsOnly": false
     },
@@ -48,8 +48,8 @@
     },
     {
       "path": "dist/index.html",
-      "sha256": "05461aab69e9ab65bc438f5736ee37ac8da68cef544466f3ae26633316beaead",
-      "bytes": 13613,
+      "sha256": "540ac72b7b01ff1fc084f618ffe14416dfc4ee95ffe7c4c8339bbcef47c8a5ef",
+      "bytes": 13765,
       "localDeploymentAssetSha256": "1223a1275d63c14e6cd1ba672f392b0c2e7b403d598204cbf9387077a391b7f6",
       "lineEndingsOnly": false
     },
@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "cee47cba3d1aa97d325f9d1566337027eaee21cf5152981880a7ab085ff048d0",
-      "bytes": 58346,
+      "sha256": "38298215b90c51cb8ae823f80553c31895601ea0bd000dcccc74f5bdd4691a1b",
+      "bytes": 59129,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -97,8 +97,8 @@
     },
     {
       "path": "dist/session-backup.js",
-      "sha256": "b94770c60e6cb050c8fa01268b6b275956cd770f5f7802250dc6113a6090f641",
-      "bytes": 5607,
+      "sha256": "9484f205a0d3acc39fb56a6f47b191484350524f67c3e93f80b778b47bb5deb2",
+      "bytes": 5619,
       "localDeploymentAssetSha256": "c34ad48563a990579247dbdfc0b9c7c27b1f99ef2314e9f068b71a7068de945a",
       "lineEndingsOnly": false
     },
@@ -271,6 +271,16 @@
       "description": "Instagram post back to a fixed 20 players per page (29 = 20 + 9, 153 = 7 x 20 + 13); fewer than 20 in total stay on one page laid out bigger and centred. The balanced last-two-pages split is kept as an unused helper option.",
       "files": [
         "dist/model.js"
+      ]
+    },
+    {
+      "version": "V52 final chip counts",
+      "description": "Once every flight is played: FINAL CHIP COUNTS in champagne gold above the table instead of PROVISIONAL CHIP COUNTS, 'Final prize pool', 'N qualified · All flights complete'. New optional field 'Day 2 starts' (typed text, e.g. Sat 29 Nov · 12:00, kept in the session backup): shown as DAY 2 STARTS ... on the right of the label row on a single page, or on the last header line when there are several pages (the right side then shows PAGE X OF Y).",
+      "files": [
+        "dist/app.js",
+        "dist/index.html",
+        "dist/model.js",
+        "dist/session-backup.js"
       ]
     }
   ]

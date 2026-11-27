@@ -264,7 +264,7 @@ test('guarantee: "£15,000 of £100,000 GTD", GTD alone, plain prize pool withou
  const rows=['A','B'].flatMap((f,k)=>Array.from({length:3},(_,i)=>({rank:k*3+i+1,name:'P'+f+i,flight:'Day 1'+f,chips:1000-k*3-i})));
  assert.deepEqual(headerText({prizePool:'15000',gtd:'100000'},rows).prizeLine,[{text:'Prize pool so far: £15,000',highlight:true},{text:'£100,000 guaranteed'}]);
  assert.deepEqual(headerText({gtd:'100,000'},rows).prizeLine,[{text:'£100,000 guaranteed'}]);assert.deepEqual(headerText({},rows).prizeLine,[]);
- assert.deepEqual(headerText({prizePool:'15000',flights:'2'},rows).prizeLine,[{text:'Prize pool: £15,000',highlight:true}],'all flights played');
+ assert.deepEqual(headerText({prizePool:'15000',flights:'2'},rows).prizeLine,[{text:'Final prize pool: £15,000',highlight:true}],'all flights played');
  const h=headerText({prizePool:'15000',gtd:'100000',flights:'8'},rows);
  assert.deepEqual(h.sub,[{text:'6 qualified'},{text:'Flights remaining: 1C–1H'}]);assert.equal(h.lines.length,2);
  const r=render2(rows,undefined,{name:'BPS',prizePool:'15000',gtd:'100000',flights:'8'});

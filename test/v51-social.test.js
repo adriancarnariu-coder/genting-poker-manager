@@ -154,3 +154,16 @@ test('logo background: thin gold frame on all four sides, every day',async()=>{
   dayTheme(palette,'2026-11-'+d).paint(c,1080,1080);const gold=rects.filter(r=>String(r[4]).startsWith('rgba(201,169,106'));
   assert.deepEqual(gold.map(r=>r.slice(0,4)),[[0,0,1080,3],[0,1077,1080,3],[0,0,3,1080],[1077,0,3,1080]],'day '+d);}
 });
+
+test('final chip counts: once every flight is played FINAL CHIP COUNTS replaces PROVISIONAL, with the Day 2 start',()=>{
+ const f=SOCIAL_FORMATS.square,rows=players(12).map((p,i)=>({...p,flight:'ABCDEFGH'[i%8]}));
+ const done=draw(rows,f,{name:'BPS',flights:'8',prizePool:'15000',day2Start:'Sat 29 Nov · 12:00'});
+ const label=done.text.find(t=>t.value==='FINAL CHIP COUNTS');assert(label,'FINAL CHIP COUNTS shown');assert(!done.text.some(t=>t.value==='PROVISIONAL CHIP COUNTS'));
+ assert(done.text.some(t=>t.value==='DAY 2 STARTS SAT 29 NOV · 12:00'),'Day 2 start by the label on a single page');
+ assert(done.text.some(t=>t.value==='Final prize pool: £15,000'));assert(done.text.some(t=>t.value==='All flights complete'));
+ const open=draw(rows.slice(0,6),f,{name:'BPS',flights:'8'});assert(!open.text.some(t=>t.value==='FINAL CHIP COUNTS'));assert(!open.text.some(t=>/^DAY 2 STARTS/.test(t.value)));
+ const unset=draw(rows,f,{name:'BPS'});assert(!unset.text.some(t=>/CHIP COUNTS$/.test(t.value)),'no status label when flights are not set');
+ const all=players(29).map((p,i)=>({...p,flight:'ABCDEFGH'[i%8]})),pages=pageSet(all,f);
+ for(const {rows:pr,page} of pages){const r=draw(pr,f,{name:'BPS',flights:'8',day2Start:'Sat 29 Nov · 12:00'},page);
+  assert(r.text.some(t=>t.value==='FINAL CHIP COUNTS'));assert(r.text.some(t=>t.value===`PAGE ${page.number} OF 2`));assert(r.text.some(t=>t.value==='Day 2 starts Sat 29 Nov · 12:00'),'several pages: Day 2 start on the header line');}
+});
