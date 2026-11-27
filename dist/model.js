@@ -528,8 +528,9 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:P.grey};
  put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
- // BB heading with the Day 2 starting blind next to it, discreet: "Start: 6,000  BB".
- if(bb){put('BB',bbX,y+14,{...headStyle,align:'right'});const used=c.measureText('BB').width;put('Start: '+bb.toLocaleString('en-GB'),bbX-used-12,y+14,{size:13,weight:500,arial:true,colour:P.dim,align:'right'});}
+ // BB heading: only "BB", in the same font and size as the values under it (one step bolder), right-aligned on
+ // the same edge as their last digit. The starting blind is not shown; it is only used to work out the BB values.
+ if(bb)put('BB',bbX,y+14,{size:Math.round(size*BB_STYLE.scale),weight:600,colour:P.grey,align:'right'});
  y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;

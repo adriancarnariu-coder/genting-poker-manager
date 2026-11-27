@@ -130,7 +130,7 @@ test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label),
   const bbText=r.text.find(t=>t.value==='BB'),chips=r.text.find(t=>t.value==='CHIPS'),player=r.text.find(t=>t.value==='PLAYER'),name=r.text.find(t=>t.value.startsWith('Player '));
   assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');assert.equal(player.x,name.x,'PLAYER starts where the names start');
   assert(r.text.some(t=>t.value==='DAY 2'),'DAY 2 on its own line');assert(r.text.some(t=>t.value==='BPS200 MAIN EVENT'),'short title in capitals');
-  assert(r.text.some(t=>t.value==='Start: 2,000'),'starting blind by the BB heading');
+  assert(!r.text.some(t=>/^Start/.test(t.value)),'no starting blind text');const bbHead=r.text.find(t=>t.value==='BB'),bbValue=r.text.find(t=>t.value===Math.round(rows[0].chips/2000).toLocaleString('en-GB'));assert.equal(bbHead.x,bbValue.x,'BB right-aligned with the values');assert.equal(bbHead.y,player.y,'same height as PLAYER');assert.equal(bbHead.font.split(' ').slice(1).join(' '),bbValue.font.split(' ').slice(1).join(' '),'same font and size as the values');assert(parseInt(bbHead.font)>parseInt(bbValue.font),'heading slightly bolder');
   layout.push([player.y,chips.x,r.rects.find(x=>x.colour==='#cc1428'&&x.h===2).y]);
  });
  assert.deepEqual(layout[0],layout[1],'same heading and column positions on every page');
