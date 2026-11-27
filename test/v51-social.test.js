@@ -71,3 +71,22 @@ test('big blinds appear next to every stack in the post and Story formats',()=>{
   assert(!draw(players(10),f,{time:''}).text.some(t=>t.value.endsWith(' BB')));
  }
 });
+
+
+test('logo palette and day backgrounds: gold logo gives a warm palette, seven variants, Genting grey without a palette',async()=>{
+ const {logoPalette}=await import('../dist/branding.js');const {dayTheme,dayIndex,DAY_NAMES}=await import('../dist/model.js');
+ const px=(rgb,n)=>{const a=[];for(let i=0;i<n;i++)a.push(...rgb,255);return a;};
+ const gold=logoPalette([...px([0,0,0],500),...px([201,169,106],200),...px([255,255,255],100)]);
+ assert.deepEqual(gold.accent,[201,169,106]);assert(gold.hue>=35&&gold.hue<=45,String(gold.hue));
+ assert.equal(logoPalette([...px([0,0,0],500),...px([255,255,255],500),...px([128,128,128],500)]),null,'no clear colour');
+ assert.deepEqual(['2026-11-23','2026-11-24','2026-11-25','2026-11-26','2026-11-27','2026-11-28','2026-11-29'].map(dayIndex),[0,1,2,3,4,5,6]);
+ assert.equal(dayIndex(''),0);assert.equal(DAY_NAMES[dayIndex('2026-11-27')],'Friday');
+ assert.equal(dayTheme(null,'2026-11-27'),null);
+ const calls=[];const ctx={createLinearGradient(){return {addColorStop(o,c){calls.push(c);}};},createRadialGradient(){return {addColorStop(o,c){calls.push(c);}};},fillRect(){},set fillStyle(v){calls.push(v);}};
+ for(let day=0;day<7;day++){const t=dayTheme(gold,'2026-11-'+String(23+day));assert.equal(t.day,day);t.paint(ctx,100,100);}
+ assert(calls.filter(c=>typeof c==='string').every(c=>!/hsla\(\d+,\d+%,(1[7-9]|[2-9]\d)%/.test(c)),'backgrounds stay dark (lightness under 17%)');
+ assert(calls.some(c=>typeof c==='string'&&c.startsWith('hsla('+gold.hue+',')),'uses the logo hue');
+ const rects=[];const c2={createLinearGradient(){return {addColorStop(){}};},createRadialGradient(){return {addColorStop(){}};},fillRect(x,y,w,h){rects.push({x,y,w,h,colour:this.fillStyle});},drawImage(){},beginPath(){},arc(){},fill(){},measureText(v){return {width:String(v).length*10};},fillText(){}};
+ drawSocial({getContext:()=>c2},players(5),genting,{time:''},band,{theme:dayTheme(gold,'2026-11-23')},SOCIAL_FORMATS.square);
+ assert.equal(rects[0].w,1080);assert(rects.some(r=>r.colour==='rgba(201,169,106,0.07)'),'alternate rows tinted with the logo colour');
+});
