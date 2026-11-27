@@ -142,7 +142,7 @@ test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label),
 test('post header: CHIP COUNTS SO FAR only while flights remain, PAGE X OF Y only with several pages',()=>{
  const f=SOCIAL_FORMATS.square,rows=players(12).map((p,i)=>({...p,flight:i<6?'A':'B'}));
  const open=draw(rows,f,{name:'BPS',flights:'4'}),done=draw(rows,f,{name:'BPS',flights:'2'});
- assert(open.text.some(t=>t.value==='CHIP COUNTS SO FAR'));assert(done.text.some(t=>t.value==='CHIP COUNTS'));assert(!done.text.some(t=>t.value==='CHIP COUNTS SO FAR'));
+ assert(open.text.some(t=>t.value==='CHIP COUNTS SO FAR'));assert(open.text.some(t=>t.value==='  ·  2 flights remaining'),'4 flights, 1A-1B imported');assert(done.text.some(t=>t.value==='FINAL CHIP COUNTS'));assert(!done.text.some(t=>/SO FAR|remaining/.test(t.value)),'every flight imported');
  assert(!open.text.some(t=>/^PAGE /.test(t.value)),'single page: no page indicator');
  const day=open.text.find(t=>t.value==='DAY 2');assert(day,'DAY 2 drawn');assert.equal(DAY_GOLD,'#D6B46D');assert.equal(day.font.startsWith('800'),true);
 });
@@ -159,10 +159,19 @@ test('BPS minimal header: name, DAY 2, "date · time · N qualified"; no prize, 
  const r=draw(rows,f,{name:'BPS200 Main Event',date:'2026-11-29',time:'16:30',flights:'8',prizePool:'17585',gtd:'100000',firstPrize:'4000',minCash:'150',day2Start:'Sat 29 Nov'});
  assert(r.text.some(t=>t.value==='BPS200 MAIN EVENT'));assert(r.text.some(t=>t.value==='DAY 2'));assert(r.text.some(t=>t.value==='29 Nov · 16:30 · 12 qualified'));
  assert(!r.text.some(t=>/£|GTD|collected|left|complete|1st place|min cash|STARTS/i.test(t.value)),'no prize, guarantee, flights or Day 2 start');
- assert(r.text.some(t=>t.value==='CHIP COUNTS'),'every flight played');
+ assert(r.text.some(t=>t.value==='FINAL CHIP COUNTS'),'every flight played');
  assert(draw(rows,f,{name:'X',time:''}).text.some(t=>t.value==='12 qualified'),'empty date and time left out with their separators');
  assert(draw(rows,f,{name:'X',date:'2026-11-29',time:''}).text.some(t=>t.value==='29 Nov · 12 qualified'));
  const name=r.text.find(t=>t.value==='Player 01'),day=r.text.find(t=>t.value==='DAY 2');
  assert.equal(BPS_PALETTE.ivory,'#F4F0E7');assert.equal(BPS_PALETTE.page,'#11100E');
  assert(name&&day);
+});
+
+test('status row: N flights remaining (1 flight singular), FINAL CHIP COUNTS when all are in, no count without a schedule, same on every page',()=>{
+ const f=SOCIAL_FORMATS.square,mk=(n,letters)=>players(n).map((p,i)=>({...p,flight:letters[i%letters.length]}));
+ const one=draw(mk(10,'ABCDEFG'),f,{name:'BPS200',flights:'8'});assert(one.text.some(t=>t.value==='  ·  1 flight remaining'));
+ const missing=draw(mk(10,'ABCDEFH'),f,{name:'BPS200',flights:'8'});assert(missing.text.some(t=>t.value==='CHIP COUNTS SO FAR'),'1G finished but its file is missing');assert(missing.text.some(t=>t.value==='  ·  1 flight remaining'));
+ const unset=draw(mk(10,'AB'),f,{name:'BPS200'});assert(unset.text.some(t=>t.value==='CHIP COUNTS SO FAR'));assert(!unset.text.some(t=>/remaining/.test(t.value)),'no count without the number of flights');
+ const all=mk(45,'ABCD'),pages=pageSet(all,f);
+ for(const {rows,page} of pages){const r=draw(rows.map(x=>({...x})),f,{name:'BPS200',flights:'8'},page);assert(r.text.some(t=>t.value==='  ·  4 flights remaining'),'page '+page.number);assert(r.text.some(t=>t.value===`PAGE ${page.number} OF 3`));}
 });

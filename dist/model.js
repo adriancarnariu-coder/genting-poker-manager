@@ -471,8 +471,11 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  const info=[displayDate(text(tournament.date)).replace(/ \d{4}$/,''),formatTournamentTime(tournament.time),qualified+' qualified'].filter(Boolean).join(' · ');
  const isize=fit(info,22,600,middleW),visTop=tsize*.56-tsize*CAP;
  const blockH=tlines.length*tsize*1.12+dsize*1.3+8+isize*.6+isize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
- // Above the table: CHIP COUNTS SO FAR while flights remain, CHIP COUNTS afterwards; PAGE 1 OF 6 on the right.
- const statusText=head.flights.length>0?'CHIP COUNTS SO FAR':'CHIP COUNTS',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:'',labelRow=30;
+ // Above the table, the same on every page of the export (worked out from all players, not just this page):
+ // - flights set and some without imported results: CHIP COUNTS SO FAR · 4 flights remaining (count in smaller warm grey);
+ // - every scheduled flight imported (e.g. 1A-1H for BPS200): FINAL CHIP COUNTS;
+ // - number of flights not set: CHIP COUNTS SO FAR without a count. PAGE 1 OF 6 on the right.
+ const left=head.flights.length?flightsToPlay(flightCount(tournament.flights),all).length:0,statusText=head.final?'FINAL CHIP COUNTS':'CHIP COUNTS SO FAR',remainingText=left?`  ·  ${left} flight${left===1?'':'s'} remaining`:'',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:'',labelRow=30;
  // Columns: rank number / medal (no RANK label), flag, PLAYER, BB (when a Day 2 big blind is set), CHIPS.
  const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,nameMax=(bb?bbX-bbW:chipX-chipW)-nameX-16;
  let band=null;
@@ -496,7 +499,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  put(info,W/2,my+8+isize*.6,{size:isize,weight:600,colour:P.grey,max:middleW});
  y+=rowHead+gap;
  const label={size:14,weight:700,colour:P.grey,tracking:.1};
- put(statusText,M,y+10,{...label,align:'left'});if(pageText)put(pageText,W-M,y+10,{...label,size:13,weight:600,colour:P.dim,align:'right'});y+=labelRow;
+ put(statusText,M,y+10,{...label,align:'left'});if(remainingText){const used=c.measureText(statusText).width;put(remainingText,M+used,y+10,{size:12,weight:600,colour:P.dim,tracking:.04,align:'left'});}if(pageText)put(pageText,W-M,y+10,{...label,size:13,weight:600,colour:P.dim,align:'right'});y+=labelRow;
  c.fillStyle=P.rule;c.fillRect(M,y,W-2*M,1);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:P.grey};
  put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
