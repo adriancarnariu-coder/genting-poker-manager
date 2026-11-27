@@ -493,7 +493,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   if(r===bubbleRow)bubble=top+rowH-1.5;
  });
  if(bubble!==null){c.fillStyle=ITM.gold;c.fillRect(M,bubble-2,W-2*M,4);}
- if(band){if(rowTheme?.base){const pad=Math.min(gap*.6,28);c.fillStyle=rowTheme.base;c.fillRect(0,band.y-pad,W,band.h+2*pad);}c.drawImage(responsibleBand,band.x,band.y,band.w,band.h);}
+ // The band (white on transparent) sits directly on the page background, so the background stays one style.
+ if(band)c.drawImage(responsibleBand,band.x,band.y,band.w,band.h);
  if(head.pageLabel&&format.key!=='square')put(head.pageLabel,W-M,band?band.y+band.h/2:H-format.bottom-gap/2,{size:20,weight:700,colour:'#9AA0A6',align:'right'});
  return canvas;
 }
