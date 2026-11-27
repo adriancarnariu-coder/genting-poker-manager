@@ -67,9 +67,9 @@ test('JPOT fallback preserves raw source and names, GDPR precedence, safe missin
  const duplicate=parse([['Name','FLT','Chips','GDPR','GDPR Consent'],['John Smith','A',100,'Y','NO']])[0];assert(duplicate.consentConflict);assert.equal(publicRows([duplicate])[0].name,'J. S.');
 });
 
-test('flight normalization A-F handles original and existing records without mutating source or rank',()=>{
- for(const letter of ['A','B','C','D','E','F'])for(const raw of [letter,letter.toLowerCase(),'  '+letter+' ', '1'+letter,'1 '+letter.toLowerCase(),'Day 1 '+letter,'day1'+letter.toLowerCase(),'Flight '+letter,'FLIGHT 1 '+letter])assert.equal(normalizeFlight(raw),letter);
- for(const raw of ['',undefined,'G','1G','10D','Day 2 A','A/B','TEST','A1','1D1'])assert.equal(normalizeFlight(raw),null);
+test('flight normalization A-H handles original and existing records without mutating source or rank',()=>{
+ for(const letter of ['A','B','C','D','E','F','G','H'])for(const raw of [letter,letter.toLowerCase(),'  '+letter+' ', '1'+letter,'1 '+letter.toLowerCase(),'Day 1 '+letter,'day1'+letter.toLowerCase(),'Flight '+letter,'FLIGHT 1 '+letter])assert.equal(normalizeFlight(raw),letter);
+ for(const raw of ['',undefined,'I','1I','Day 1 J','10D','Day 2 A','A/B','TEST','A1','1D1'])assert.equal(normalizeFlight(raw),null);
  const records=parse([headers,[1,'John','Smith',100,' 1 d ','Entered','YES'],[2,'Private','Name',200,'Day 1 E','Entered','NO']]);const saved=JSON.stringify(records);const rows=publicRows(records);assert.deepEqual(rows.map(r=>[r.rank,r.name,r.flight,r.chips]),[[1,'P. N.','Day 1E',200],[2,'John Smith','Day 1D',100]]);assert.equal(records[0].originalFlight,' 1 d ');assert.equal(records[0].flight,'1 d');assert.equal(JSON.stringify(records),saved);
  for(const query of ['D','d','1D','1 d','Flight D'])assert.equal(filterRows(rows,{flight:query}).rows[0].rank,2);
  const legacy={qualified:true,originalName:'John Smith',originalGdpr:'YES',flight:'1 F',chips:100};assert.equal(publicRows([legacy])[0].flight,'Day 1F');assert.equal(legacy.flight,'1 F');assert.equal(invalidRecords([{...legacy,flight:'ZZ'}]).length,1);assert.equal(publicRows([{...legacy,flight:'ZZ'}])[0].flight,'—');

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {drawLeaderboard,leaderboardPages,layout,placesPaid,headerText,exportChecks,prizePool,bigBlind,bbLabel,COLUMN_MAX,PAGE_MAX,PLANNED_MAX} from '../dist/model.js';
+import {drawLeaderboard,leaderboardPages,layout,placesPaid,headerText,exportChecks,flightCount,flightsToPlay,prizePool,bigBlind,bbLabel,COLUMN_MAX,PAGE_MAX,PLANNED_MAX} from '../dist/model.js';
 import {exportFilename} from '../dist/branding.js';
 import {readyMessage} from '../dist/view-mode.js';
 
@@ -206,4 +206,20 @@ test('checks before export: clear warnings, none when everything is consistent',
  for(const part of ['No tournament name','No date','Day 2 big blind is not a whole number','Places paid (40) is not lower than the 30 qualified players','1st place prize is higher than the prize pool','Min cash is higher than the 1st place prize','Min cash × places paid is more than the prize pool'])assert(all.includes(part),part);
  assert(exportChecks({name:'X',date:'2026-11-24',bb:'5000'},rows).some(m=>/stacks are below 1 big blind/.test(m)));
  assert(exportChecks({name:'X',date:'2026-11-24',prizePool:'12.345'},rows).some(m=>/Prize pool is not a valid amount/.test(m)));
+});
+
+test('flights: count 1-8, flights still to play, header line and checks',()=>{
+ for(const v of ['','0','9','abc','2.5',undefined])assert.equal(flightCount(v),0);
+ assert.equal(flightCount('8'),8);
+ const rows=['A','B','C','D','E'].map((f,i)=>({rank:i+1,name:'P'+i,flight:'Day 1'+f,chips:1000-i}));
+ assert.deepEqual(flightsToPlay(8,rows),['F','G','H']);assert.deepEqual(flightsToPlay(5,rows),[]);assert.deepEqual(flightsToPlay(0,rows),[]);
+ assert.deepEqual(headerText({flights:'8'},rows).flights,[{text:'3 flights to play: 1F, 1G, 1H'}]);
+ assert.deepEqual(headerText({flights:'6'},rows).flights,[{text:'1 flight to play: 1F'}]);
+ assert.deepEqual(headerText({flights:'5'},rows).flights,[]);assert.deepEqual(headerText({},rows).flights,[]);
+ assert.equal(headerText({flights:'8',firstPrize:'100'},rows).lines.length,3);
+ const r=render2(players(20).map(p=>({...p,flight:'A'})),undefined,{name:'BPS',flights:'3',prizePool:'1000'});
+ assert(r.text.includes('2 flights to play: 1B, 1C'));
+ const g=[{rank:1,name:'X',flight:'Day 1G',chips:10}];
+ assert(exportChecks({name:'X',date:'2026-11-24',flights:'6'},g).some(m=>/Day 1G, but the event is set to 6 flights/.test(m)));
+ assert(!exportChecks({name:'X',date:'2026-11-24',flights:'8'},g).some(m=>/event is set to/.test(m)));
 });

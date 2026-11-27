@@ -28,7 +28,7 @@ test('real imported flights survive transfer without losing players, chips or GD
 });
 
 test('V51 backups keep places paid, big blind, prize pool, 1st place and min cash; older backups still restore',()=>{
- const extra={...details,paid:'80',bb:'6000',prizePool:'150000',firstPrize:'30500',minCash:'550'};
+ const extra={...details,paid:'80',flights:'8',bb:'6000',prizePool:'150000',firstPrize:'30500',minCash:'550'};
  assert.deepEqual(parseSessionBackup(serializeSessionBackup([],extra)).tournament,extra);
  const old=parseSessionBackup(serializeSessionBackup([],details)).tournament;
  assert.deepEqual(old,details);for(const key of BACKUP_EXTRA_FIELDS)assert(!(key in old));

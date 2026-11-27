@@ -5,7 +5,13 @@ export const text=v=>String(v??'').trim();
 const norm=v=>text(v).toLowerCase().replace(/[^a-z0-9]/g,'');
 export const yes=v=>typeof v==='string'&&v.trim().toUpperCase()==='YES';
 export const nameConsent=v=>typeof v==='string'&&['Y','YES'].includes(v.trim().toUpperCase());
-export function normalizeFlight(value){return text(value).toUpperCase().match(/^(?:(?:DAY\s*1|FLIGHT\s*(?:1\s*)?)\s*|1\s*)?([A-F])$/)?.[1]??null;}
+// V51: flights A to H (Day 1A ... Day 1H).
+export const FLIGHT_LETTERS='ABCDEFGH';
+export function normalizeFlight(value){return text(value).toUpperCase().match(/^(?:(?:DAY\s*1|FLIGHT\s*(?:1\s*)?)\s*|1\s*)?([A-H])$/)?.[1]??null;}
+// Number of Day 1 flights in the event (1-8), typed by staff; 0 when not set.
+export function flightCount(value){const s=text(value);return /^[1-8]$/.test(s)?Number(s):0;}
+// Flights of the event that have no qualified player yet, e.g. ['F','G','H'].
+export function flightsToPlay(total,rows=[]){const played=new Set(rows.map(r=>normalizeFlight(r.flight)).filter(Boolean));return [...FLIGHT_LETTERS.slice(0,total)].filter(letter=>!played.has(letter));}
 export function qualifiedFrom(value){const letter=normalizeFlight(value);return letter?`Day 1${letter}`:'—';}
 export const flightValue=r=>r.originalFlight??r.flight;
 const consentMeaning=v=>nameConsent(v)?'yes':['N','NO'].includes(text(v).toUpperCase())?'no':'unknown';
@@ -167,7 +173,10 @@ export function headerText(tournament={},all=[],page){
  // the gold line in the table (not shown in the header, to keep it light).
  const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
  const extra=[...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
- return {name,title,info,sub,extra,pageLabel:page?.total>1?page.number+' / '+page.total:''};
+ // Optional line: flights still to play, e.g. "3 flights to play: 1F, 1G, 1H".
+ const toPlay=flightsToPlay(flightCount(tournament.flights),all),flights=toPlay.length?[{text:`${toPlay.length} ${toPlay.length===1?'flight':'flights'} to play: `+toPlay.map(letter=>'1'+letter).join(', ')}]:[];
+ const lines=[sub,extra,flights].filter(line=>line.length);
+ return {name,title,info,sub,extra,flights,lines,pageLabel:page?.total>1?page.number+' / '+page.total:''};
 }
 // When "<name> · Day 2" does not fit on one line, "Day 2" gets its own line (never a dangling " ·").
 function titleLines(c,head,width){const lines=wrapTournamentName(c,head.title,width);return lines.length<2||!head.name?lines:[...wrapTournamentName(c,head.name,width),'Day 2'];}
@@ -194,6 +203,7 @@ export function exportChecks(t={},rows=[]){
  if(pool!==null&&first!==null&&first>pool)out.push('1st place prize is higher than the prize pool.');
  if(first!==null&&min!==null&&min>first)out.push('Min cash is higher than the 1st place prize.');
  if(pool!==null&&min!==null&&paid&&min*paid>pool)out.push('Min cash × places paid is more than the prize pool.');
+ {const total=flightCount(t.flights),beyond=total?[...new Set(rows.map(r=>normalizeFlight(r.flight)).filter(letter=>letter&&FLIGHT_LETTERS.indexOf(letter)>=total))]:[];if(beyond.length)out.push(`Players qualified from Day 1${beyond.join(', Day 1')}, but the event is set to ${total} ${total===1?'flight':'flights'}.`);}
  if(bb&&n){const short=rows.filter(r=>r.chips<bb).length;if(short)out.push(`${short} ${short===1?'stack is':'stacks are'} below 1 big blind: check the Day 2 big blind.`);}
  return out;
 }
@@ -230,12 +240,12 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  const head=headerText(tournament,measureRows,page),titleWidth=middleWidth;let titleFont=nameSize,nameLines=[];
  for(;;){c.font=measureFont(800,titleFont);nameLines=titleLines(c,head,titleWidth);if(nameLines.length<=2||titleFont<=nameSize*.6)break;titleFont=Math.max(nameSize*.6,titleFont*.92);}
  if(nameLines.length>2){let rest=nameLines.slice(1).join(' ');while(rest.length>1&&c.measureText(rest+'…').width>titleWidth)rest=rest.slice(0,-1);nameLines=[nameLines[0],rest.trimEnd()+'…'];}
- const titleLineHeight=titleFont*1.12,infoSize=head.info?fitLine(head.info,dateSize*.75,600):0,subFit=fitLine(head.sub.map(s=>s.text).join('  ·  '),dateSize*.75,600),extraFit=head.extra.length?fitLine(head.extra.map(s=>s.text).join('  ·  '),dateSize*.75,600):subFit,subSize=Math.min(subFit,extraFit),extraSize=head.extra.length?subSize:0;
- const infoBlock=head.info?lineGap+infoSize*1.2:0,infoRel=nameLines.length*titleLineHeight+lineGap+infoSize*.6,subRel=nameLines.length*titleLineHeight+infoBlock+lineGap+subSize*.6,extraRel=subRel+subSize*.6+lineGap+extraSize*.6;
+ const titleLineHeight=titleFont*1.12,infoSize=head.info?fitLine(head.info,dateSize*.75,600):0,lineSize=Math.min(...head.lines.map(line=>fitLine(line.map(s=>s.text).join('  ·  '),dateSize*.75,600)));
+ const infoBlock=head.info?lineGap+infoSize*1.2:0,infoRel=nameLines.length*titleLineHeight+lineGap+infoSize*.6,firstLineRel=nameLines.length*titleLineHeight+infoBlock+lineGap+lineSize*.6,lineStep=lineSize*1.2+lineGap,lastLineRel=firstLineRel+(head.lines.length-1)*lineStep;
  // Visible extent: cap height of the first title line to the descenders of the qualified / prize pool line.
- const visTop=titleLineHeight/2-titleFont*CAP,middleHeight=(head.extra.length?extraRel+extraSize*DESC:subRel+subSize*DESC)-visTop;
+ const visTop=titleLineHeight/2-titleFont*CAP,middleHeight=lastLineRel+lineSize*DESC-visTop;
  const headerRowHeight=Math.max(zoneH,middleHeight),titleTop=zoneY+(headerRowHeight-middleHeight)/2-visTop,logoShift=(headerRowHeight-zoneH)/2;
- const infoY=titleTop+infoRel,subY=titleTop+subRel,extraY=titleTop+extraRel;
+ const infoY=titleTop+infoRel;
  // The table is centred: the same gap (BAND_GAP) above it, between it and the band, and under the band.
  const spare=0,lineY=Math.ceil(zoneY+headerRowHeight+BAND_GAP),tableY=lineY+48,rowsTop=tableY+24;
  const rowsBottom=rowsTop+spare+l.rows*rowHeight-3;
@@ -278,8 +288,7 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  };
  nameLines.forEach((value,i)=>drawLine({value,size:titleFont,weight:800,colour:'#F2F2F4',tracking:'-0.015em'},l.width/2,titleTop+i*titleLineHeight+titleLineHeight/2,'center',titleWidth));
  if(head.info)drawLine({value:head.info,size:infoSize,weight:600,colour:'#C5C8CE'},l.width/2,infoY,'center',middleWidth);
- drawSegments(c,head.sub,l.width/2,subY,measureFont(600,subSize),middleWidth);
- if(head.extra.length)drawSegments(c,head.extra,l.width/2,extraY,measureFont(600,extraSize),middleWidth);
+ head.lines.forEach((line,i)=>drawSegments(c,line,l.width/2,titleTop+firstLineRel+i*lineStep,measureFont(600,lineSize),middleWidth));
  c.restore();
  c.textAlign='left';
  c.fillStyle='#cc1428';
@@ -331,8 +340,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=titleLines(c,head,middleW);
  while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=titleLines(c,head,middleW);}
  if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
- const isize=head.info?fit(head.info,20,600,middleW):0,sfit=fit(head.sub.map(s=>s.text).join('  ·  '),20,600,middleW),efit=head.extra.length?fit(head.extra.map(s=>s.text).join('  ·  '),20,600,middleW):sfit,ssize=Math.min(sfit,efit),esize=head.extra.length?ssize:0;
- const subRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+ssize*.6,visTop=tsize*.56-tsize*CAP,extraRel=subRel+ssize*.6+6+esize*.6,blockH=(head.extra.length?extraRel+esize*DESC:subRel+ssize*DESC)-visTop,rowHead=Math.max(zoneH,blockH);
+ const isize=head.info?fit(head.info,20,600,middleW):0,lsize=Math.min(...head.lines.map(line=>fit(line.map(s=>s.text).join('  ·  '),20,600,middleW)));
+ const firstRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
  const bb=bigBlind(tournament.bb),rankW=78,flightW=bb?140:160,chipW=bb?260:180,nameX=M+rankW+10,flightX=W-M-chipW-flightW,chipX=W-M-14,nameMax=flightX-nameX-16;
  let band=null;
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44,bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
@@ -344,11 +353,10 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,g.x,g.y,g.w,g.h);
  const brandImage=branding.tournamentLogo?.image;
  if(brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0){const crop=branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight},b=fitInZone(crop,{x:W-M-zoneW,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'right');c.drawImage(brandImage,crop.x,crop.y,crop.w,crop.h,b.x,b.y,b.w,b.h);}
- let my=y+(rowHead-blockH)/2-visTop;
+ let my=y+(rowHead-blockH)/2-visTop;const originY=my;
  for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
  if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
- drawSegments(c,head.sub,W/2,my+6+ssize*.6,'600 '+ssize+'px Montserrat',middleW);
- if(head.extra.length)drawSegments(c,head.extra,W/2,my+6+ssize*1.2+6+esize*.6,'600 '+esize+'px Montserrat',middleW);
+ head.lines.forEach((line,i)=>drawSegments(c,line,W/2,originY+firstRel+i*lstep,'600 '+lsize+'px Montserrat',middleW));
  y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
  put('RANK',M+rankW-12,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});put('PLAYER NAME',nameX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});
  put('QUALIFIED FROM',flightX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});put('CHIP COUNT',chipX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});
