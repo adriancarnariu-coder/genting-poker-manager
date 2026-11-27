@@ -422,7 +422,7 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
 // same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
 // Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
 export const SOCIAL_FORMATS={
- square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:15,maxRow:64,band:26.4},
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4},
  story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60,band:44}
 };
 export function socialPages(rows,format){const out=[];for(let i=0;i<rows.length;i+=format.perPage)out.push(rows.slice(i,i+format.perPage));return out;}
