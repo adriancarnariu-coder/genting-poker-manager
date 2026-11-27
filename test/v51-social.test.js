@@ -179,7 +179,7 @@ test('status row: N flights remaining (1 flight singular), FINAL CHIP COUNTS whe
 test('status row in three zones: provisional total with a loading mark, final PRIZE POOL in gold, nothing in the centre without an amount',()=>{
  const f=SOCIAL_FORMATS.square,mk=(n,letters)=>players(n).map((p,i)=>({...p,flight:letters[i%letters.length]}));
  const open=draw(mk(10,'AB'),f,{name:'BPS200',flights:'8',prizePool:'17585',gtd:'100000'});
- const amount=open.text.find(t=>t.value==='£17,585');assert(amount,'provisional total');assert.equal(open.arcs.length,1,'open-circle mark drawn');assert(!open.text.some(t=>t.value==='PRIZE POOL'));
+ const amount=open.text.find(t=>t.value==='£17,585');assert(amount,'provisional total');assert.equal(open.arcs.length,1,'open-circle mark drawn');const lab=open.text.find(t=>t.value==='PRIZE POOL');assert(lab&&lab.x<amount.x&&amount.x<open.arcs[0][0],'PRIZE POOL, amount, then the loading mark');
  const status=open.text.find(t=>t.value==='CHIP COUNTS SO FAR');assert(Math.abs(amount.y-status.y)<1,'same row');
  const done=draw(mk(10,'AB'),f,{name:'BPS200',flights:'2',prizePool:'17585',gtd:'100000'});
  assert(done.text.some(t=>t.value==='PRIZE POOL'));assert(done.text.some(t=>t.value==='£100,000'),'final amount topped up to the guarantee');assert.equal(done.arcs.length,0,'no loading mark when final');assert(!done.text.some(t=>/remaining/.test(t.value)));
@@ -190,4 +190,11 @@ test('status row in three zones: provisional total with a loading mark, final PR
  const width=t=>t.value.length*parseFloat(t.font.match(/[\d.]+px/)[0])*.55;
  const remaining=r.text.find(t=>/remaining/.test(t.value)),centre=r.text.find(t=>t.value==='£17,585'),pageLabel=r.text.find(t=>/^PAGE /.test(t.value));
  assert(remaining.x+width(remaining)<centre.x,'left zone clear of the centre');assert(r.arcs[0][0]+8<pageLabel.x-width(pageLabel),'centre clear of the page label');
+});
+
+test('6 flights selected (1A-1F): A-C imported -> CHIP COUNTS SO FAR · 3 flights remaining with the loading mark; A-F imported -> FINAL CHIP COUNTS',()=>{
+ const f=SOCIAL_FORMATS.square,mk=letters=>players(12).map((p,i)=>({...p,flight:letters[i%letters.length]})),t={name:'BPS200',flights:'6',prizePool:'17585',gtd:'100000'};
+ const abc=draw(mk('ABC'),f,t);assert(abc.text.some(x=>x.value==='CHIP COUNTS SO FAR'));assert(abc.text.some(x=>x.value==='  ·  3 flights remaining'));assert.equal(abc.arcs.length,1);
+ const abcde=draw(mk('ABCDE'),f,t);assert(abcde.text.some(x=>x.value==='  ·  1 flight remaining'));
+ const all=draw(mk('ABCDEF'),f,t);assert(all.text.some(x=>x.value==='FINAL CHIP COUNTS'));assert(!all.text.some(x=>/remaining|SO FAR/.test(x.value)));assert.equal(all.arcs.length,0);assert(all.text.some(x=>x.value==='£100,000'));
 });
