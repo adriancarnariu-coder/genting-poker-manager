@@ -84,3 +84,88 @@ header .brand-logo img{position:absolute;max-width:none}
 .tournament-fields #logo-scope-note{margin:0;font-size:12px;color:#9aa0a6}
 .tournament-fields #logo-status{margin:0;font-size:12px;color:#f1f3f4}
 .tournament-fields #logo-status:empty{display:none}
+.page-switcher{align-items:center}
+.page-switcher #page-label{min-width:110px;text-align:center;font-weight:600;color:#f1f3f4}
+.page-switcher button:disabled{opacity:.45;cursor:default}
+.summary-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0;padding:0;border:0;min-width:0}
+.summary-fields legend{grid-column:1/-1;padding:0;margin-bottom:4px;font-size:12px;color:#bdc1c6}
+.summary-fields label{display:grid;gap:4px;font-size:12px;min-width:0}
+.summary-fields input{width:100%;min-width:0;box-sizing:border-box}
+.format-field{display:grid;gap:6px;max-width:420px;margin:12px 0 4px;font-size:13px;color:#bdc1c6}
+.format-field select{min-height:40px;padding:6px 10px;border-radius:8px;background:#292a2d;color:#f1f3f4;border:1px solid #5f6368;font-size:14px}
+/* V51: tournament fields laid out in rows across the page instead of one long column. */
+@media(min-width:701px){
+header{grid-template-columns:minmax(150px,210px) minmax(0,1fr)}
+header .tournament-fields{grid-column:1/-1;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));align-items:start;column-gap:16px;row-gap:14px}
+header .tournament-fields .time-field{align-content:start}
+header .tournament-fields>p{grid-column:1/-1}
+header .tournament-fields .logo-field{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding-top:14px}
+header .tournament-fields .logo-field #logo-scope-note,header .tournament-fields .logo-field #logo-status{flex:1 1 220px}
+}
+@media(max-width:700px){
+header .tournament-fields{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+header .tournament-fields>label[for=tournament-name],header .tournament-fields>p,header .tournament-fields .logo-field{grid-column:1/-1}
+}
+.export-checks{margin:12px 0 4px;padding:10px 14px 10px 30px;border:1px solid #8a6d1a;border-radius:8px;background:#2b2615;color:#f3d27a;font-size:13px;line-height:1.5}
+.export-checks li+li{margin-top:4px}
+header .tournament-fields select{width:100%;height:44px;min-width:0;padding:0 10px;border-radius:7px;background:#292a2d;color:#f1f3f4;border:1px solid #3c4043;font:14px Arial}
+header .tournament-fields .field-note{font-size:12px;color:#9aa0a6;line-height:1.4;min-height:0}
+header .tournament-fields .field-note:empty{display:none}
+.export-summary{margin:14px 0 4px;padding:12px 14px;border:1px solid #3c4043;border-radius:8px;background:#26272a;max-width:520px}
+.export-summary h3{margin:0 0 8px;font-size:13px;letter-spacing:.3px;text-transform:uppercase;color:#bdc1c6}
+.export-summary table{width:100%;border-collapse:collapse;font-size:14px}
+.export-summary th,.export-summary td{padding:4px 6px;text-align:right;border-bottom:1px solid #3c4043}
+.export-summary th:first-child,.export-summary td:first-child{text-align:left}
+.export-summary th{font-size:12px;color:#9aa0a6;font-weight:600}
+.export-summary tfoot td{font-weight:700;border-bottom:0;color:#f1f3f4}
+.export-summary p{margin:8px 0 0;font-size:13px;color:#bdc1c6}
+/* V51 phone pass. */
+.export-summary table{min-width:0;table-layout:auto}
+.upload-picker input[type=file]{min-height:56px}
+.upload-picker input::file-selector-button{min-height:44px;padding:12px 18px}
+.upload-panel.drag-over{outline:2px dashed #cc1428;outline-offset:6px}
+.drop-hint{display:none;font-size:12px;color:#9aa0a6}
+@media(hover:hover) and (pointer:fine){.drop-hint{display:block}}
+input[type=checkbox]{width:22px;height:22px;accent-color:#cc1428;flex:0 0 auto}
+label:has(>input[type=checkbox]),.tournament-fields .logo-scope{min-height:44px;display:flex;align-items:center;gap:10px}
+summary{padding-block:12px;cursor:pointer}
+@media(max-width:700px){
+button,.actions a,select,#time-picker-trigger{min-height:44px}
+}
+/* Players as cards on phones instead of a wide table that scrolls sideways. */
+@media(max-width:600px){
+.table-wrap{overflow-x:hidden;overflow-y:auto}
+.table-wrap table{min-width:0;table-layout:auto}
+.table-wrap colgroup,.table-wrap thead tr:not(.filters){display:none}
+.table-wrap thead,.table-wrap tbody{display:block}
+.table-wrap thead tr.filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 0 4px}
+.table-wrap thead tr.filters td{display:block;padding:0;border:0}
+.table-wrap thead tr.filters td:first-child,.table-wrap thead tr.filters td:nth-child(2){grid-column:1/-1}
+.table-wrap thead tr.filters input{width:100%;min-height:44px}
+.table-wrap tbody tr{display:grid;grid-template-columns:auto minmax(0,1fr) auto;column-gap:12px;row-gap:2px;align-items:baseline;padding:10px 12px;margin-top:8px;border:1px solid #3c4043;border-radius:8px}
+.table-wrap tbody td{display:block;padding:0;border:0;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.table-wrap tbody td:nth-child(1){grid-row:1/span 2;align-self:center;font-weight:700;min-width:28px;text-align:right}
+.table-wrap tbody td:nth-child(2){grid-column:2;font-weight:700}
+.table-wrap tbody td:nth-child(3){grid-column:2;font-size:12px;color:#9aa0a6}
+.table-wrap tbody td:nth-child(4){grid-column:3;grid-row:2;font-size:12px;color:#9aa0a6;text-align:right}
+.table-wrap tbody td:nth-child(5){grid-column:3;grid-row:1;font-weight:700;text-align:right}
+.table-wrap tbody td[colspan]{grid-column:1/-1;grid-row:auto;text-align:center;font-weight:400}
+}
+.history-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.history-list li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 12px;border:1px solid #3c4043;border-radius:8px}
+.history-list li>div{flex:1 1 220px;min-width:0;display:grid;gap:2px}
+.history-list strong{overflow-wrap:anywhere}
+.history-list small{color:#9aa0a6;font-size:12px}
+.history-list button.danger{background:#cc1428;border-color:#cc1428;color:#fff}
+header .tournament-fields .preset-row{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 12px;padding-bottom:12px;border-bottom:1px solid #3c4043}
+header .tournament-fields .preset-row label{flex:1 1 220px;max-width:340px}
+header .tournament-fields .preset-row button{min-height:44px}
+header .tournament-fields .preset-row .field-note{flex:1 1 100%}
+.format-field .field-note{font-size:12px;color:#9aa0a6;line-height:1.4}
+.format-field .field-note:empty{display:none}
+/* V51 simple header: one title line, no logo. */
+header{grid-template-columns:minmax(0,1fr)!important}
+header .app-head{text-align:center;width:100%}
+header .app-title{margin:0;font-size:26px;font-weight:800;letter-spacing:.2px;color:#f1f3f4}
+header .app-head .muted{margin:6px auto 0;max-width:none;font-size:14px}
+.flags-field{margin:12px 0 0;font-size:14px;color:#e8eaed}

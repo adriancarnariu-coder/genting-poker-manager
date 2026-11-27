@@ -40,12 +40,13 @@ export function logoKeys(name,date){
  return {series:'logo:series:'+slug,edition:isoDate(date)?'logo:edition:'+slug+'|'+date:null};
 }
 
-export function exportFilename({name,date}={},width,height){
+export function exportFilename({name,date}={},width,height,page){
  let part=plain(name).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
  // Long names are shortened at a word boundary.
  if(part.length>60){part=part.slice(0,61);part=part.slice(0,part.lastIndexOf('_')>20?part.lastIndexOf('_'):60);}
  part=part||'Genting';
- return `${part}_${isoDate(date)?date:'undated'}_Day2_Leaderboard_${width}x${height}.jpg`;
+ const pagePart=page?.total>1?`_${page.number}of${page.total}`:'';
+ return `${part}_${isoDate(date)?date:'undated'}_Day2_Leaderboard${pagePart}_${width}x${height}.jpg`;
 }
 
 export function checkLogoFile(file){
@@ -61,4 +62,19 @@ export function displayDate(value){
  if(!isoDate(value))return '';
  const [y,m,d]=value.split('-').map(Number),check=new Date(Date.UTC(y,m-1,d));
  return check.getUTCMonth()===m-1&&check.getUTCDate()===d?`${String(d).padStart(2,'0')} ${months[m-1]} ${y}`:'';
+}
+// V51 logo palette: rgba pixel data (Uint8ClampedArray-like) -> {accent:[r,g,b], hue, sat} or null when the logo
+// has no clear colour (black, white or grey only).
+export function logoPalette(data){
+ let r=0,g=0,b=0,n=0;
+ for(let i=0;i+3<data.length;i+=4){
+  if(data[i+3]<128)continue;
+  const R=data[i]/255,G=data[i+1]/255,B=data[i+2]/255,max=Math.max(R,G,B),min=Math.min(R,G,B),l=(max+min)/2,s=max===min?0:(max-min)/(1-Math.abs(2*l-1));
+  if(s<.25||l<.2||l>.92)continue;
+  r+=data[i];g+=data[i+1];b+=data[i+2];n++;
+ }
+ if(n<20)return null;
+ const accent=[r/n,g/n,b/n].map(Math.round),[R,G,B]=accent.map(v=>v/255),max=Math.max(R,G,B),min=Math.min(R,G,B),l=(max+min)/2,d=max-min;
+ let hue=0;if(d){hue=max===R?((G-B)/d)%6:max===G?(B-R)/d+2:(R-G)/d+4;hue=Math.round(hue*60+360)%360;}
+ return {accent,hue,sat:d?+(d/(1-Math.abs(2*l-1))).toFixed(3):0};
 }
