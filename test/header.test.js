@@ -63,7 +63,7 @@ test('long titles use at most two lines, shrinking first, and stay between the l
 });
 
 test('optional header fields leave no stray separators or invented values',()=>{
- const info=r=>r.text.filter(t=>t.font.startsWith('600 ')&&!/qualified|prize pool|^ +· +$/.test(t.value)).map(t=>t.value);
+ const info=r=>r.text.filter(t=>t.font.startsWith('600 ')&&!/qualified|prize pool|[Ff]lights? played|^ +· +$/.test(t.value)).map(t=>t.value);
  assert.deepEqual(info(render(1,{})),[]);
  assert.deepEqual(info(render(1,{date:'2026-12-03'})),['03 Dec 2026']);
  assert.deepEqual(info(render(1,{time:'00:00'})),['00:00']);
@@ -80,3 +80,9 @@ test('invalid entered times block export and valid 24-hour boundaries work',()=>
 });
 
 test('saved colon times and newly entered dot times display identically without changing the time',()=>{for(const [input,expected] of [['18:30','18:30'],['00:00','00:00'],['23:59','23:59'],['18.30','18:30'],['',''],['24.00','24.00']])assert.equal(formatTournamentTime(input),expected);});
+
+test('flights line appears under the qualified line even without the number of flights',()=>{
+ const r=render(3,{date:'2026-12-03'});
+ const qualified=r.text.find(t=>t.value==='3 qualified'),flights=r.text.find(t=>t.value==='Flights played: 1A');
+ assert(qualified&&flights);assert(flights.y>qualified.y);
+});

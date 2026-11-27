@@ -188,8 +188,13 @@ export function headerText(tournament={},all=[],page){
  const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
  const extra=[...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
  // Optional line: flights still to play, e.g. "3 flights to play: 1F, 1G, 1H".
- const toPlay=flightsToPlay(flightCount(tournament.flights),all),flights=toPlay.length?[{text:`${toPlay.length} ${toPlay.length===1?'flight':'flights'} to play: `+toPlay.map(letter=>'1'+letter).join(', ')}]:[];
- const lines=[sub,extra,flights].filter(line=>line.length);
+ // Flights line, right under the qualified / prize line: "2 of 8 flights played · to play: 1C, 1D, 1E, 1F, 1G, 1H",
+ // "All 8 flights played", or without a total "Flights played: 1A–1F".
+ const flightTotal=flightCount(tournament.flights),toPlay=flightsToPlay(flightTotal,all),played=[...new Set(all.map(r=>normalizeFlight(r.flight)).filter(Boolean))].sort();
+ const span=letters=>{const out=[];for(let i=0;i<letters.length;){let j=i;while(j+1<letters.length&&letters[j+1].charCodeAt(0)===letters[j].charCodeAt(0)+1)j++;out.push(j-i>=2?'1'+letters[i]+'–1'+letters[j]:letters.slice(i,j+1).map(l=>'1'+l).join(', '));i=j+1;}return out.join(', ');};
+ const flightText=flightTotal?(toPlay.length?`${flightTotal-toPlay.length} of ${flightTotal} flights played · to play: `+toPlay.map(letter=>'1'+letter).join(', '):`All ${flightTotal} flights played`):played.length?'Flights played: '+span(played):'';
+ const flights=flightText?[{text:flightText}]:[];
+ const lines=[sub,flights,extra].filter(line=>line.length);
  return {name,title,info,sub,extra,flights,lines,pageLabel:page?.total>1?page.number+' / '+page.total:''};
 }
 // When "<name> · Day 2" does not fit on one line, "Day 2" gets its own line (never a dangling " ·").
