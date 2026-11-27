@@ -214,8 +214,10 @@ function drawSegments(c,segments,cx,y,font,max){
 // A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
 // V52 short chip counts for Instagram: 874,500 -> "874.5K", 1,250,000 -> "1.25M".
 export function shortChips(n){if(!Number.isFinite(n))return '';const trim=(v,d)=>String(Number(v.toFixed(d)));if(n>=1e6||Number((n/1e3).toFixed(1))>=1000)return trim(n/1e6,2)+'M';if(n>=1e3)return trim(n/1e3,1)+'K';return String(n);}
-// Colour of the "DAY 2" line under the tournament name (champagne gold).
-export const DAY_GOLD='#E6C88A';
+// British Poker Series palette for the post and Story: warm black page, discreet alternate rows, ivory text,
+// BPS gold for DAY 2 and the chip leader, warm grey for secondary text, dark gold rule above the table.
+export const BPS_PALETTE={page:'#11100E',rowB:'#1B1813',ivory:'#F4F0E7',gold:'#D6B46D',grey:'#BCB4A6',dim:'#8E8678',rule:'#7B6237'};
+export const DAY_GOLD=BPS_PALETTE.gold;
 export const BAND_GAP=40,TABLE_EDGE='#5F6368';
 // V51: with only a few players the responsible gambling band is drawn smaller (64% at 1 player, full size from 10),
 // so it does not dominate a short leaderboard.
@@ -430,11 +432,12 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
 // same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
 // Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
 export const SOCIAL_FORMATS={
- square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4},
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4,balanceLast:true},
  story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60,band:44}
 };
-// Pages are always filled with 20 players in turn (29 = 20 + 9, 153 = 7 x 20 + 13); fewer than 20 in total fit on one
-// page laid out bigger and centred. balanceLast (not used now) would split the remainder over the last two pages.
+// Post (balanceLast): full pages of 20 first, then the remainder split evenly over the last two pages (odd: the
+// second-to-last page gets one more), e.g. 29 = 15 + 14, 69 = 20 + 20 + 15 + 14, 153 = 6 x 20 + 17 + 16. Up to 20 in
+// total: one page laid out bigger and centred. Other formats fill pages of 20 in turn.
 export function pageSizes(n,per,balanceLast=false){if(n<=0)return [];const pages=Math.ceil(n/per);if(pages===1)return [n];if(!balanceLast)return Array.from({length:pages},(_,i)=>Math.min(per,n-i*per));const rest=n-per*(pages-2);return [...Array(pages-2).fill(per),Math.ceil(rest/2),Math.floor(rest/2)];}
 export function socialPages(rows,format){const out=[];let i=0;for(const size of pageSizes(rows.length,format.perPage,!!format.balanceLast)){out.push(rows.slice(i,i+size));i+=size;}return out;}
 export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,branding={},format=SOCIAL_FORMATS.square){
@@ -449,8 +452,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  canvas.width=W;canvas.height=H;
  const c=canvas.getContext('2d');if(!c)throw Error('The image exceeds the browser’s capacity.');
  c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
- const rowTheme=branding.theme;if(rowTheme)rowTheme.paint(c,W,H);else{c.fillStyle='#202124';c.fillRect(0,0,W,H);}
- const put=(value,x,y,{size,weight=400,colour='#F2F2F4',align='center',max=W-2*M,arial=false,tracking=0})=>{
+ const P=BPS_PALETTE;c.fillStyle=P.page;c.fillRect(0,0,W,H);
+ const put=(value,x,y,{size,weight=400,colour=P.ivory,align='center',max=W-2*M,arial=false,tracking=0})=>{
   c.font=arial?TABLE_FONT(size,weight>=600?700:500):weight+' '+size+'px Montserrat';
   c.letterSpacing=tracking?tracking*size+'px':'0px';c.textAlign=align;c.textBaseline='middle';c.fillStyle=colour;c.fillText(value,x,y,max);
  };
@@ -458,17 +461,18 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // Frame: the same gap above the header, between the header and the table, between the table and the band and
  // under the band. The Post uses the whole image; the Story keeps 250 px clear at the top and bottom for Instagram.
  const zoneW=270,zoneH=Math.round(zoneW*620/1440),head=headerText(tournament,all,page),middleW=W-2*M-2*zoneW-32;
- // Tournament name in white (up to two lines), then "DAY 2" on its own line in champagne gold, letter-spaced.
- const titleText=(head.name||'Leaderboard').toLocaleUpperCase('en-GB'),dayGold=branding.dayColour||DAY_GOLD;
+ // Three header lines between the logos: tournament name (ivory, capitals), DAY 2 (BPS gold, letter-spaced), then
+ // "29 Nov · 16:30 · 29 qualified" in warm grey (empty parts and their separators left out).
+ const titleText=(head.name||'Leaderboard').toLocaleUpperCase('en-GB'),dayGold=branding.dayColour||P.gold;
  let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=wrapTournamentName(c,titleText,middleW);
  while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=wrapTournamentName(c,titleText,middleW);}
  if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
- const dsize=Math.round(tsize*.66);
- const isize=head.info?fit(head.info,20,600,middleW):0,lsize=Math.min(...head.lines.map(line=>fit(line.map(s=>s.text).join('  ·  '),20,600,middleW)));
- const firstRel=tlines.length*tsize*1.12+dsize*1.3+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
- // Above the table: "PROVISIONAL CHIP COUNTS" while flights remain (left) and "PAGE 1 OF 6" (right).
- // Every flight played: FINAL CHIP COUNTS in champagne gold. Right: PAGE X OF Y, or the Day 2 start on a single page.
- const provisional=head.flights.length>0,bbText=head.startBB?'STARTING BB '+head.startBB.toLocaleString('en-GB'):'',statusText=provisional?'CHIP COUNTS SO FAR':head.final?'FINAL CHIP COUNTS':'',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:head.day2Start?'DAY 2 STARTS '+head.day2Start.toUpperCase():'',labelRow=statusText||bbText||pageText?30:0;
+ const dsize=Math.round(tsize*.66),qualified=page?.totalPlayers??all.length;
+ const info=[displayDate(text(tournament.date)).replace(/ \d{4}$/,''),formatTournamentTime(tournament.time),qualified+' qualified'].filter(Boolean).join(' · ');
+ const isize=fit(info,22,600,middleW),visTop=tsize*.56-tsize*CAP;
+ const blockH=tlines.length*tsize*1.12+dsize*1.3+8+isize*.6+isize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
+ // Above the table: CHIP COUNTS SO FAR while flights remain, CHIP COUNTS afterwards; PAGE 1 OF 6 on the right.
+ const statusText=head.flights.length>0?'CHIP COUNTS SO FAR':'CHIP COUNTS',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:'',labelRow=30;
  // Columns: rank number / medal (no RANK label), flag, PLAYER, BB (when a Day 2 big blind is set), CHIPS.
  const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,nameMax=(bb?bbX-bbW:chipX-chipW)-nameX-16;
  let band=null;
@@ -486,33 +490,34 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,g.x,g.y,g.w,g.h);
  const brandImage=branding.tournamentLogo?.image;
  if(brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0){const crop=branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight},b=fitInZone(crop,{x:W-M-zoneW,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'right');c.drawImage(brandImage,crop.x,crop.y,crop.w,crop.h,b.x,b.y,b.w,b.h);}
- let my=y+(rowHead-blockH)/2-visTop;const originY=my;
+ let my=y+(rowHead-blockH)/2-visTop;
  for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
  put('DAY 2',W/2,my+dsize*.62,{size:dsize,weight:800,colour:dayGold,tracking:.14,max:middleW});my+=dsize*1.3;
- if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
- head.lines.forEach((line,i)=>drawSegments(c,line,W/2,originY+firstRel+i*lstep,'600 '+lsize+'px Montserrat',middleW));
+ put(info,W/2,my+8+isize*.6,{size:isize,weight:600,colour:P.grey,max:middleW});
  y+=rowHead+gap;
- if(labelRow){const label={size:14,weight:700,colour:'#C5C8CE',tracking:.1};let lx=M;if(statusText){put(statusText,M,y+10,{...label,colour:head.final?dayGold:label.colour,align:'left'});lx+=c.measureText(statusText).width;}if(bbText)put((statusText?'  ·  ':'')+bbText,lx,y+10,{...label,colour:'#E8EAED',align:'left'});if(pageText)put(pageText,W-M,y+10,{...label,align:'right'});y+=labelRow;}
- c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
- const headStyle={size:15,weight:700,arial:true,colour:'#C5C8CE'};
- put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});if(bb)put('BB',bbX,y+14,{...headStyle,align:'right'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
+ const label={size:14,weight:700,colour:P.grey,tracking:.1};
+ put(statusText,M,y+10,{...label,align:'left'});if(pageText)put(pageText,W-M,y+10,{...label,size:13,weight:600,colour:P.dim,align:'right'});y+=labelRow;
+ c.fillStyle=P.rule;c.fillRect(M,y,W-2*M,1);y+=12;
+ const headStyle={size:15,weight:700,arial:true,colour:P.grey};
+ put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
+ // BB heading with the Day 2 starting blind next to it, discreet: "Start: 6,000  BB".
+ if(bb){put('BB',bbX,y+14,{...headStyle,align:'right'});const used=c.measureText('BB').width;put('Start: '+bb.toLocaleString('en-GB'),bbX-used-12,y+14,{size:13,weight:500,arial:true,colour:P.dim,align:'right'});}
  y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
-  c.fillStyle=j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=TABLE_EDGE;c.fillRect(M,top+rowH-5,W-2*M,2);}
-  const strong=leader?LEADER.text:'#fff';
+  c.fillStyle=j%2?P.rowB:P.page;c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=P.rule;c.fillRect(M,top+rowH-4,W-2*M,1);}
+  const strong=leader?P.gold:P.ivory;
   const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
   if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
-  put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax-fSpace-fGap});
+  put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:P.ivory,align:'left',max:nameMax-fSpace-fGap});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
-  if(bb)put(bbCount(r.chips,bb),bbX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:BB_STYLE.colour,align:'right',max:bbW});
+  if(bb)put(bbCount(r.chips,bb),bbX,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:P.grey,align:'right',max:bbW});
   if(r===bubbleRow)bubble=top+rowH-1.5;
  });
  if(bubble!==null){c.fillStyle=ITM.gold;c.fillRect(M,bubble-2,W-2*M,4);}
  // The band (white on transparent) sits directly on the page background, so the background stays one style.
  if(band)c.drawImage(responsibleBand,band.x,band.y,band.w,band.h);
- if(head.pageLabel&&format.key!=='square')put(head.pageLabel,W-M,band?band.y+band.h/2:H-format.bottom-gap/2,{size:20,weight:700,colour:'#9AA0A6',align:'right'});
  return canvas;
 }
