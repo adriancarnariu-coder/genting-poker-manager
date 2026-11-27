@@ -235,3 +235,12 @@ test('ties: equal stacks share the place, listed alphabetically; the next place 
  assert.deepEqual(p.map(r=>r.rank),s.map(r=>r.rank));
  const again=publicRows([...records].reverse());assert.deepEqual(again,p,'import order does not matter');
 });
+
+test('summary before export: players and chips per flight, full names vs initials',async()=>{
+ const {exportSummary}=await import('../dist/model.js');
+ const rec=(key,name,flight,chips,gdpr)=>({key,qualified:true,originalName:name,originalGdpr:gdpr,flight,chips});
+ const s=exportSummary([rec('1','Ann Lee','B',500,'Y'),rec('2','Bob Ray','A',300,'N'),rec('3','Cy Doe','A',200,'YES'),{...rec('4','Out','A',100,'Y'),qualified:false}]);
+ assert.deepEqual(s.flights,[{flight:'Day 1A',players:2,chips:500},{flight:'Day 1B',players:1,chips:500}]);
+ assert.equal(s.players,3);assert.equal(s.chips,1000);assert.equal(s.fullNames,2);assert.equal(s.initials,1);
+ assert.deepEqual(exportSummary([]),{flights:[],players:0,chips:0,fullNames:0,initials:0});
+});

@@ -82,6 +82,15 @@ export const invalidRecords=records=>{const dropped=droppedKeys(records);return 
 // so the order never depends on which file was imported first. Staff and public views use the same order.
 function ranked(records){const dropped=droppedKeys(records);const list=records.filter(r=>r.qualified&&!dropped.has(r.key)).sort((a,b)=>(b.chips??-1)-(a.chips??-1)||text(a.originalName).localeCompare(text(b.originalName),'en-GB',{sensitivity:'base'})||String(a.key??'').localeCompare(String(b.key??'')));let rank=0;return list.map((r,i)=>{if(i===0||r.chips!==list[i-1].chips||r.chips===null)rank=i+1;return {r,rank};});}
 export function publicRows(records){return ranked(records).map(({r,rank})=>({rank,name:!r.consentConflict&&nameConsent(r.originalGdpr)?text(r.originalName):initials(r.originalName),nationality:publicNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
+// V51 summary before export: qualified players and chips per flight, and how many names the JPEG shows in full
+// (GDPR consent) or as initials. Public and staff rows share the same order, so they can be compared row by row.
+export function exportSummary(records){
+ const pub=publicRows(records),staff=staffRows(records),byFlight=new Map();
+ for(const r of pub){const f=byFlight.get(r.flight)||{flight:r.flight,players:0,chips:0};f.players++;f.chips+=r.chips??0;byFlight.set(r.flight,f);}
+ const flights=[...byFlight.values()].sort((a,b)=>a.flight.localeCompare(b.flight));
+ const initials=pub.filter((r,i)=>r.name!==staff[i].name).length;
+ return {flights,players:pub.length,chips:pub.reduce((s,r)=>s+(r.chips??0),0),fullNames:pub.length-initials,initials};
+}
 export function staffRows(records){return ranked(records).map(({r,rank})=>({rank,name:text(r.originalName)||'—',nationality:staffNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
 // Search the supplied display projection; JPEG generation uses publicRows separately.
 export function filterRows(rows,{name='',nationality='',flight='',chipCount=''}={}){
