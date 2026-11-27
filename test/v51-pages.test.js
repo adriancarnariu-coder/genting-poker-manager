@@ -141,8 +141,8 @@ test('top 3: gold, silver and bronze discs behind ranks 1-3 only, with dark bold
  const c={fillRect(){},drawImage(){},save(){},restore(){},setTransform(){},beginPath(){},arc(x,y,r){discs.push({x,y,r,colour:this.fillStyle});},fill(){},measureText(v){return {width:String(v).length*10};},fillText(value,x,y){text.push({value:String(value),font:this.font,colour:this.fillStyle});}};
  drawLeaderboard({getContext:()=>c},players(30),genting,{},undefined,1,{});
  assert.deepEqual(discs.map(d=>d.colour),['#D4AF37','#C9CDD2','#C88A4A']);
- for(const rank of ['1','2','3']){const t=text.find(x=>x.value===rank);assert.equal(t.colour,'#202124');assert.match(t.font,/^bold /);}
- const four=text.find(x=>x.value==='4');assert.equal(four.colour,'#fff');assert.doesNotMatch(four.font,/bold/);
+ for(const rank of ['1','2','3']){const t=text.find(x=>x.value===rank);assert.equal(t.colour,'#202124');assert.match(t.font,/^700 /);}
+ const four=text.find(x=>x.value==='4');assert.equal(four.colour,'#fff');assert.doesNotMatch(four.font,/^700/);
 });
 
 test('big blinds: optional; each stack shows its BB count, rounded, one decimal under 10 BB',()=>{
@@ -153,7 +153,7 @@ test('big blinds: optional; each stack shows its BB count, rounded, one decimal 
  const without=draw(''),withBB=draw('1000');
  assert(!without.text.some(t=>t.value.endsWith(' BB')));
  const labels=withBB.text.filter(t=>t.value.endsWith(' BB'));assert.equal(labels.length,30);assert.equal(labels[0].value,'30 BB');
- assert(labels.every(t=>t.font==='23px Arial'),'BB text is 85% of the name size');
+ assert(labels.every(t=>t.font==='500 23px Montserrat'),'BB text is 85% of the name size');
  assert(withBB.canvas.width>=without.canvas.width,'the chip column never shrinks');
  for(const l of labels){const chips=withBB.text.find(t=>t.value===(Number(l.value.replace(' BB',''))*1000).toLocaleString('en-GB'));assert(l.x<chips.x,'BB sits before the chips');}
 });

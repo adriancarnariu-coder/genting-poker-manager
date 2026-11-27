@@ -156,7 +156,7 @@ export function loadLeaderboardFont(){
 // V51 places paid: optional, set once all flights have finished. A gold line with IN THE MONEY · TOP N is drawn
 // under the last paid place (nothing when empty, invalid or when every player is paid).
 export function placesPaid(value){const s=String(value??'').trim();if(!/^\d{1,4}$/.test(s))return 0;const n=Number(s);return n>=1?n:0;}
-export const ITM={gold:'#D4AF37',ink:'#202124',font:'bold 17px Arial',label:n=>'IN THE MONEY · TOP '+n};
+export const ITM={gold:'#D4AF37',ink:'#202124',font:'700 17px Montserrat',label:n=>'IN THE MONEY · TOP '+n};
 // V51 prize pool (optional, typed by staff), shown under the date as "£14,250 prize pool".
 export function prizePool(value){const s=String(value??'').replace(/[£,\s]/g,'');if(!/^\d{1,9}(\.\d{1,2})?$/.test(s))return null;const n=Number(s);return '£'+n.toLocaleString('en-GB',{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2});}
 // V51 top 3: rank 1, 2 and 3 sit in a gold, silver and bronze disc (number in dark bold).
@@ -191,6 +191,8 @@ function drawSegments(c,segments,cx,y,font,max){
 }
 // A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
 export const BAND_GAP=40,TABLE_EDGE='#5F6368';
+// V51: one typeface for the whole JPEG. The table uses Montserrat (already bundled for the header) instead of Arial.
+const TABLE_FONT=(size,weight=500)=>weight+' '+size+'px Montserrat';
 // Measured on the exported JPEGs (Montserrat, middle baseline): capitals reach 0.52 em above the middle line, descenders 0.45 em below.
 const CAP=.52,DESC=.45;
 // V51 checks before export: plain-language warnings shown above GENERATE. They never block the export.
@@ -210,7 +212,7 @@ export function exportChecks(t={},rows=[]){
  if(bb&&n){const short=rows.filter(r=>r.chips<bb).length;if(short)out.push(`${short} ${short===1?'stack is':'stacks are'} below 1 big blind: check the Day 2 big blind.`);}
  return out;
 }
-export const LEADER={label:'CHIP LEADER',gold:'#D4AF37',text:'#F3D27A',fill:'#33301F',font:'bold 17px Arial'};
+export const LEADER={label:'CHIP LEADER',gold:'#D4AF37',text:'#F3D27A',fill:'#33301F',font:'700 17px Montserrat'};
 export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,pixelDensity=1,branding={}){
  if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
  if(!(logo?.naturalWidth>0)||!(logo?.naturalHeight>0))throw Error('The Genting logo could not be loaded. The JPEG was not generated.');
@@ -218,10 +220,10 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  if(!validTournamentTime(tournament.time))throw Error('Enter a time from 00:00 to 23:59 (HH:mm).');
  const c=canvas.getContext('2d');if(!c)throw Error('The image exceeds the browser’s capacity.');
  const bodyFont=27,lineHeight=34,padding=14,sectionGap=40;
- c.font=bodyFont+'px Arial';let nameWidth=580;const measuredNames=measureRows.map(r=>String(r.name));while(measuredNames.some(value=>wrapTournamentName(c,value,nameWidth-padding*2).length>2))nameWidth=Math.ceil(nameWidth*1.15);
+ c.font=TABLE_FONT(bodyFont);let nameWidth=580;const measuredNames=measureRows.map(r=>String(r.name));while(measuredNames.some(value=>wrapTournamentName(c,value,nameWidth-padding*2).length>2))nameWidth=Math.ceil(nameWidth*1.15);
  const textWidth=value=>c.measureText(String(value)).width;const rankWidth=Math.max(90,...measureRows.map(r=>textWidth(r.rank)+padding*2)),chipWidth=Math.max(230,...measureRows.map(r=>textWidth(r.chips.toLocaleString('en-GB'))+padding*2+(bb?textWidth(bbLabel(r.chips,bb))*BB_STYLE.scale+16:0)));
- c.font='bold 19px Arial';const widths=[Math.max(rankWidth,textWidth('RANK')+padding*2),nameWidth,Math.max(250,textWidth('QUALIFIED FROM')+padding*2),Math.max(chipWidth,textWidth('CHIP COUNT')+padding*2)],sectionWidth=widths.reduce((a,b)=>a+b,0);
- l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=bodyFont+'px Arial';const playerLines=rows.map(r=>wrapTournamentName(c,String(r.name),nameWidth-padding*2)),baseRowHeight=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)).some(lines=>lines.length>1)?86:58;
+ c.font=TABLE_FONT(19,700);const widths=[Math.max(rankWidth,textWidth('RANK')+padding*2),nameWidth,Math.max(250,textWidth('QUALIFIED FROM')+padding*2),Math.max(chipWidth,textWidth('CHIP COUNT')+padding*2)],sectionWidth=widths.reduce((a,b)=>a+b,0);
+ l.width=Math.ceil(80+l.sections*sectionWidth+(l.sections-1)*sectionGap);c.font=TABLE_FONT(bodyFont);const playerLines=rows.map(r=>wrapTournamentName(c,String(r.name),nameWidth-padding*2)),baseRowHeight=measuredNames.map(value=>wrapTournamentName(c,value,nameWidth-padding*2)).some(lines=>lines.length>1)?86:58;
  const previousVerticalMargin=l.sections===1?64:l.sections===2?80:96,verticalMargin=l.sections===1?32:l.sections===2?40:44,previousFooterGap=l.sections===1?48:l.sections===2?64:72,footerGap=24,bottomMargin=14,rowHeight=baseRowHeight+Math.min(14,Math.floor((previousFooterGap-footerGap+previousVerticalMargin-bottomMargin+2*(previousVerticalMargin-verticalMargin))/l.rows));
  const innerWidth=l.width-80;
  const nameSize=l.sections===1?48:l.sections===2?62.4:70.2,k=nameSize/48;
@@ -299,8 +301,8 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
  let offset=0;
  // Pages keep the first page's size and type sizes; a page with 20 players or fewer uses one centred column.
  const drawSections=page?.sections?Math.min(l.sections,rows.length<=COLUMN_MAX?1:2):l.sections,startX=40+(l.sections-drawSections)*(sectionWidth+sectionGap)/2;
- for(let section=0;section<drawSections;section++){const x=startX+section*(sectionWidth+sectionGap),count=Math.floor(rows.length/drawSections)+(section<rows.length%drawSections?1:0);let dx=x;c.font='bold 19px Arial';c.fillStyle='#eee';c.textBaseline='alphabetic';JPEG_COLUMNS.forEach((label,i)=>{c.textAlign=i===0||i===3?'right':'left';c.fillText(label,dx+(i===0||i===3?widths[i]-padding:padding),tableY);dx+=widths[i];});
- for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2,leader=r.chips===topChips;if(r===bubbleRow)bubbles.push({x,y:top+rowHeight-1.5,w:sectionWidth});c.fillStyle=leader?LEADER.fill:j%2?'#292A2D':'#202124';c.fillRect(x,top,sectionWidth,rowHeight-3);if(j===count-1){c.fillStyle=TABLE_EDGE;c.fillRect(x,top+rowHeight-5,sectionWidth,2);}if(leader){const b=3,h=rowHeight-3;c.fillStyle=LEADER.gold;c.fillRect(x,top,sectionWidth,b);c.fillRect(x,top+h-b,sectionWidth,b);c.fillRect(x,top,b,h);c.fillRect(x+sectionWidth-b,top,b,h);}let dx=x;c.font=bodyFont+'px Arial';c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding),lines=Array.isArray(value)?value:[value];if(leader&&(i===0||i===3))c.fillStyle=LEADER.text;const medal=i===0?MEDALS[Number(r.rank)]:null;if(medal){c.font='bold '+bodyFont+'px Arial';drawMedal(c,tx-c.measureText(lines[0]).width/2,centre,Math.round(bodyFont*.8),medal);c.fillStyle=MEDAL_INK;c.textAlign='right';}lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));if(medal)c.font=bodyFont+'px Arial';if(i===3&&bb){const used=c.measureText(lines[0]).width;c.font=Math.round(bodyFont*BB_STYLE.scale)+'px Arial';c.fillStyle=leader?LEADER.gold:BB_STYLE.colour;c.textAlign='right';c.fillText(bbLabel(r.chips,bb),tx-used-14,centre);c.font=bodyFont+'px Arial';}dx+=widths[i];});}
+ for(let section=0;section<drawSections;section++){const x=startX+section*(sectionWidth+sectionGap),count=Math.floor(rows.length/drawSections)+(section<rows.length%drawSections?1:0);let dx=x;c.font=TABLE_FONT(19,700);c.fillStyle='#eee';c.textBaseline='alphabetic';JPEG_COLUMNS.forEach((label,i)=>{c.textAlign=i===0||i===3?'right':'left';c.fillText(label,dx+(i===0||i===3?widths[i]-padding:padding),tableY);dx+=widths[i];});
+ for(let j=0;j<count;j++){const index=offset+j,r=rows[index],top=rowsTop+j*rowHeight,centre=top+rowHeight/2,leader=r.chips===topChips;if(r===bubbleRow)bubbles.push({x,y:top+rowHeight-1.5,w:sectionWidth});c.fillStyle=leader?LEADER.fill:j%2?'#292A2D':'#202124';c.fillRect(x,top,sectionWidth,rowHeight-3);if(j===count-1){c.fillStyle=TABLE_EDGE;c.fillRect(x,top+rowHeight-5,sectionWidth,2);}if(leader){const b=3,h=rowHeight-3;c.fillStyle=LEADER.gold;c.fillRect(x,top,sectionWidth,b);c.fillRect(x,top+h-b,sectionWidth,b);c.fillRect(x,top,b,h);c.fillRect(x+sectionWidth-b,top,b,h);}let dx=x;c.font=TABLE_FONT(bodyFont);c.textBaseline='middle';[String(r.rank),playerLines[index],qualifiedFrom(r.flight),r.chips.toLocaleString('en-GB')].forEach((value,i)=>{c.fillStyle='#fff';c.textAlign=i===0||i===3?'right':'left';const tx=dx+(i===0||i===3?widths[i]-padding:padding),lines=Array.isArray(value)?value:[value];if(leader&&(i===0||i===3))c.fillStyle=LEADER.text;const medal=i===0?MEDALS[Number(r.rank)]:null;if(medal){c.font=TABLE_FONT(bodyFont,700);drawMedal(c,tx-c.measureText(lines[0]).width/2,centre,Math.round(bodyFont*.8),medal);c.fillStyle=MEDAL_INK;c.textAlign='right';}lines.forEach((line,k)=>c.fillText(line,tx,centre+(k-(lines.length-1)/2)*lineHeight));if(medal)c.font=TABLE_FONT(bodyFont);if(i===3&&bb){const used=c.measureText(lines[0]).width;c.font=TABLE_FONT(Math.round(bodyFont*BB_STYLE.scale));c.fillStyle=leader?LEADER.gold:BB_STYLE.colour;c.textAlign='right';c.fillText(bbLabel(r.chips,bb),tx-used-14,centre);c.font=TABLE_FONT(bodyFont);}dx+=widths[i];});}
  offset+=count;}
  // Drawn after every row so the next row cannot cover the label.
  for(const b of bubbles){c.fillStyle=ITM.gold;c.fillRect(b.x,b.y-2,b.w,4);}
@@ -333,7 +335,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';
  c.fillStyle='#202124';c.fillRect(0,0,W,H);
  const put=(value,x,y,{size,weight=400,colour='#F2F2F4',align='center',max=W-2*M,arial=false,tracking=0})=>{
-  c.font=arial?(weight>=600?'bold ':'')+size+'px Arial':weight+' '+size+'px Montserrat';
+  c.font=arial?TABLE_FONT(size,weight>=600?700:500):weight+' '+size+'px Montserrat';
   c.letterSpacing=tracking?tracking*size+'px':'0px';c.textAlign=align;c.textBaseline='middle';c.fillStyle=colour;c.fillText(value,x,y,max);
  };
  const fit=(value,size,weight,max)=>{c.font=weight+' '+size+'px Montserrat';const w=c.measureText(value).width;return w>max?size*max/w:size;};
@@ -370,12 +372,12 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   c.fillStyle=leader?LEADER.fill:j%2?'#292A2D':'#202124';c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=TABLE_EDGE;c.fillRect(M,top+rowH-5,W-2*M,2);}
   if(leader){const b=3,h=rowH-3;c.fillStyle=LEADER.gold;c.fillRect(M,top,W-2*M,b);c.fillRect(M,top+h-b,W-2*M,b);c.fillRect(M,top,b,h);c.fillRect(W-M-b,top,b,h);}
   const strong=leader?LEADER.text:'#fff';
-  const medal=MEDALS[Number(r.rank)];if(medal){c.font='bold '+size+'px Arial';drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
+  const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
   put(String(r.name),nameX,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax});
   put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:'#fff',align:'left',max:flightW-10});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
-  if(bb){c.font=size+'px Arial';const used=c.measureText(r.chips.toLocaleString('en-GB')).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
+  if(bb){c.font=TABLE_FONT(size);const used=c.measureText(r.chips.toLocaleString('en-GB')).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}
   if(r===bubbleRow)bubble=top+rowH-1.5;
  });
  if(bubble!==null){c.fillStyle=ITM.gold;c.fillRect(M,bubble-2,W-2*M,4);}
