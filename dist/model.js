@@ -184,29 +184,30 @@ export function headerText(tournament={},all=[],page){
  const info=[displayDate(text(tournament.date)),formatTournamentTime(tournament.time)].filter(Boolean).join(' · ');
  const flightTotal=flightCount(tournament.flights),toPlay=flightsToPlay(flightTotal,all);
  const span=letters=>{const out=[];for(let i=0;i<letters.length;){let j=i;while(j+1<letters.length&&letters[j+1].charCodeAt(0)===letters[j].charCodeAt(0)+1)j++;out.push(j-i>=2?'1'+letters[i]+'–1'+letters[j]:letters.slice(i,j+1).map(l=>'1'+l).join(', '));i=j+1;}return out.join(', ');};
- // Prize line: "Prize pool so far: £15,000 · £100,000 guaranteed" (each part only when it is known; "Prize pool:"
- // once every flight is played).
- const gtd=prizePool(tournament.gtd),stillPlaying=!flightTotal||toPlay.length>0;
+ // Prize line: "£17,585 collected · 18% of GTD" (amount in gold, share of the guarantee in light grey, rounded to
+ // the nearest whole percent; no percent without a guarantee). Guarantee only: "£100,000 GTD".
+ const gtd=prizePool(tournament.gtd),amount=v=>Number(String(v??'').replace(/[£,\s]/g,'')),gtdValue=gtd?amount(tournament.gtd):0;
  // Every flight played: the counts are final ("Final prize pool", "All flights complete", FINAL CHIP COUNTS).
  const final=!!flightTotal&&!toPlay.length;
- const prizeLine=[...(pool?[{text:(stillPlaying?'Prize pool so far: ':'Final prize pool: ')+pool,highlight:true}]:[]),...(gtd?[{text:gtd+' guaranteed'}]:[])];
- // Players line: "29 qualified · Flights remaining: 1C–1H" (flights only while some are still to play).
- const flights=flightTotal&&toPlay.length?[{text:'Flights remaining: '+span(toPlay)}]:[];
+ const prizeLine=pool?[{text:pool+' collected',highlight:true},...(gtdValue>0?[{text:Math.round(amount(tournament.prizePool)/gtdValue*100)+'% of GTD',colour:'#C5C8CE'}]:[])]:gtdValue>0?[{text:gtd+' GTD',colour:'#C5C8CE'}]:[];
+ // Players line: "29 qualified · 1C–1H left" (flights only while some are still to play).
+ const flights=flightTotal&&toPlay.length?[{text:span(toPlay)+' left'}]:[];
  const sub=[{text:total+' qualified'},...flights,...(final?[{text:'All flights complete'}]:[])];
  // Optional Day 2 start as typed, e.g. "Sat 29 Nov · 12:00": by the page label on a single page, else on the last line.
  const day2Start=text(tournament.day2Start).slice(0,40),day2OnLine=!!day2Start&&page?.total>1;
  // Optional line: first prize and min cash, e.g. "1st place £4,015 · min cash £150".
  const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
  const startBB=bigBlind(tournament.bb);
- const extra=[...(day2OnLine?[{text:'Day 2 starts '+day2Start}]:[]),...(startBB?[{text:'Day 2 starting BB: '+startBB.toLocaleString('en-GB')}]:[]),...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
+ // Starting BB sits above the table, next to the chip counts label (startBB), not in the header lines.
+ const extra=[...(day2OnLine?[{text:'Day 2 starts '+day2Start}]:[]),...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
  const lines=[prizeLine,sub,extra].filter(line=>line.length);
- return {name,title,info,prizeLine,sub,extra,flights,final,day2Start,lines,pageShort:page?.total>1?page.number+'/'+page.total:'',pageLabel:page?.total>1?page.number+' / '+page.total:''};
+ return {name,title,info,prizeLine,sub,extra,flights,final,day2Start,startBB,lines,pageShort:page?.total>1?page.number+'/'+page.total:'',pageLabel:page?.total>1?page.number+' / '+page.total:''};
 }
 // When "<name> · Day 2" does not fit on one line, "Day 2" gets its own line (never a dangling " ·").
 function titleLines(c,head,width){const lines=wrapTournamentName(c,head.title,width);return lines.length<2||!head.name?lines:[...wrapTournamentName(c,head.name,width),'Day 2'];}
 function drawSegments(c,segments,cx,y,font,max){
  c.font=font;c.letterSpacing='0px';c.textBaseline='middle';c.textAlign='left';
- const parts=[];segments.forEach((s,i)=>{if(i)parts.push({text:'  ·  ',colour:'#9AA0A6'});parts.push({text:s.text,colour:s.highlight?LEADER.text:'#E8EAED'});});
+ const parts=[];segments.forEach((s,i)=>{if(i)parts.push({text:'  ·  ',colour:'#9AA0A6'});parts.push({text:s.text,colour:s.colour||(s.highlight?LEADER.text:'#E8EAED')});});
  const widths=parts.map(part=>c.measureText(part.text).width),total=widths.reduce((a,b)=>a+b,0),scale=total>max?max/total:1;
  let x=cx-total*scale/2;parts.forEach((part,i)=>{c.fillStyle=part.colour;c.fillText(part.text,x,y,widths[i]*scale);x+=widths[i]*scale;});
 }
@@ -458,7 +459,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // under the band. The Post uses the whole image; the Story keeps 250 px clear at the top and bottom for Instagram.
  const zoneW=270,zoneH=Math.round(zoneW*620/1440),head=headerText(tournament,all,page),middleW=W-2*M-2*zoneW-32;
  // Tournament name in white (up to two lines), then "DAY 2" on its own line in champagne gold, letter-spaced.
- const titleText=head.name||'Leaderboard',dayGold=branding.dayColour||DAY_GOLD;
+ const titleText=(head.name||'Leaderboard').toLocaleUpperCase('en-GB'),dayGold=branding.dayColour||DAY_GOLD;
  let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=wrapTournamentName(c,titleText,middleW);
  while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=wrapTournamentName(c,titleText,middleW);}
  if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
@@ -467,7 +468,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  const firstRel=tlines.length*tsize*1.12+dsize*1.3+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
  // Above the table: "PROVISIONAL CHIP COUNTS" while flights remain (left) and "PAGE 1 OF 6" (right).
  // Every flight played: FINAL CHIP COUNTS in champagne gold. Right: PAGE X OF Y, or the Day 2 start on a single page.
- const provisional=head.flights.length>0,statusText=provisional?'PROVISIONAL CHIP COUNTS':head.final?'FINAL CHIP COUNTS':'',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:head.day2Start?'DAY 2 STARTS '+head.day2Start.toUpperCase():'',labelRow=statusText||pageText?30:0;
+ const provisional=head.flights.length>0,bbText=head.startBB?'STARTING BB '+head.startBB.toLocaleString('en-GB'):'',statusText=provisional?'CHIP COUNTS SO FAR':head.final?'FINAL CHIP COUNTS':'',pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:head.day2Start?'DAY 2 STARTS '+head.day2Start.toUpperCase():'',labelRow=statusText||bbText||pageText?30:0;
  // Columns: rank number / medal (no RANK label), flag, PLAYER, BB (when a Day 2 big blind is set), CHIPS.
  const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,nameMax=(bb?bbX-bbW:chipX-chipW)-nameX-16;
  let band=null;
@@ -491,7 +492,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
  head.lines.forEach((line,i)=>drawSegments(c,line,W/2,originY+firstRel+i*lstep,'600 '+lsize+'px Montserrat',middleW));
  y+=rowHead+gap;
- if(labelRow){const label={size:14,weight:700,colour:'#C5C8CE',tracking:.1};if(statusText)put(statusText,M,y+10,{...label,colour:head.final?dayGold:label.colour,align:'left'});if(pageText)put(pageText,W-M,y+10,{...label,align:'right'});y+=labelRow;}
+ if(labelRow){const label={size:14,weight:700,colour:'#C5C8CE',tracking:.1};let lx=M;if(statusText){put(statusText,M,y+10,{...label,colour:head.final?dayGold:label.colour,align:'left'});lx+=c.measureText(statusText).width;}if(bbText)put((statusText?'  ·  ':'')+bbText,lx,y+10,{...label,colour:'#E8EAED',align:'left'});if(pageText)put(pageText,W-M,y+10,{...label,align:'right'});y+=labelRow;}
  c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:'#C5C8CE'};
  put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});if(bb)put('BB',bbX,y+14,{...headStyle,align:'right'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});

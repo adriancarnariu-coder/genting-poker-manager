@@ -130,20 +130,20 @@ test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label),
   assert(!r.text.some(t=>/^Day 1[A-H]$/.test(t.value)),'no qualified-from column');
   const bbText=r.text.find(t=>t.value==='BB'),chips=r.text.find(t=>t.value==='CHIPS'),player=r.text.find(t=>t.value==='PLAYER'),name=r.text.find(t=>t.value.startsWith('Player '));
   assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');assert.equal(player.x,name.x,'PLAYER starts where the names start');
-  assert(r.text.some(t=>t.value==='DAY 2'),'DAY 2 on its own line');assert(r.text.some(t=>t.value==='BPS200 Main Event'),'title on its own');
-  assert(r.text.some(t=>t.value==='Day 2 starting BB: 2,000'));
+  assert(r.text.some(t=>t.value==='DAY 2'),'DAY 2 on its own line');assert(r.text.some(t=>t.value==='BPS200 MAIN EVENT'),'short title in capitals');
+  assert(r.text.some(t=>t.value==='STARTING BB 2,000'));
   layout.push([player.y,chips.x,r.rects.filter(x=>x.colour==='#cc1428').map(x=>x.y).join()]);
  });
  assert.deepEqual(layout[0],layout[1],'same heading and column positions on every page');
  const r=draw(pages[0].rows,f,{time:'18:15'},pages[0].page);
  assert(r.text.some(t=>t.value===all[0].chips.toLocaleString('en-GB'))&&all[0].chips.toLocaleString('en-GB').includes(','),'exact chips with thousands separator');assert(!r.text.some(t=>t.value==='BB'),'no BB heading without a big blind');
- assert(!r.text.some(t=>/starting BB/.test(t.value)),'no starting BB line without a big blind');
+ assert(!r.text.some(t=>/starting bb/i.test(t.value)),'no starting BB line without a big blind');
 });
 
-test('post header: PROVISIONAL CHIP COUNTS only while flights remain, PAGE X OF Y only with several pages',()=>{
+test('post header: CHIP COUNTS SO FAR only while flights remain, PAGE X OF Y only with several pages',()=>{
  const f=SOCIAL_FORMATS.square,rows=players(12).map((p,i)=>({...p,flight:i<6?'A':'B'}));
  const open=draw(rows,f,{name:'BPS',flights:'4'}),done=draw(rows,f,{name:'BPS',flights:'2'});
- assert(open.text.some(t=>t.value==='PROVISIONAL CHIP COUNTS'));assert(!done.text.some(t=>t.value==='PROVISIONAL CHIP COUNTS'));
+ assert(open.text.some(t=>t.value==='CHIP COUNTS SO FAR'));assert(!done.text.some(t=>t.value==='CHIP COUNTS SO FAR'));
  assert(!open.text.some(t=>/^PAGE /.test(t.value)),'single page: no page indicator');
  const day=open.text.find(t=>t.value==='DAY 2');assert(day,'DAY 2 drawn');assert.equal(DAY_GOLD,'#E6C88A');
 });
@@ -158,9 +158,9 @@ test('logo background: thin gold frame on all four sides, every day',async()=>{
 test('final chip counts: once every flight is played FINAL CHIP COUNTS replaces PROVISIONAL, with the Day 2 start',()=>{
  const f=SOCIAL_FORMATS.square,rows=players(12).map((p,i)=>({...p,flight:'ABCDEFGH'[i%8]}));
  const done=draw(rows,f,{name:'BPS',flights:'8',prizePool:'15000',day2Start:'Sat 29 Nov · 12:00'});
- const label=done.text.find(t=>t.value==='FINAL CHIP COUNTS');assert(label,'FINAL CHIP COUNTS shown');assert(!done.text.some(t=>t.value==='PROVISIONAL CHIP COUNTS'));
+ const label=done.text.find(t=>t.value==='FINAL CHIP COUNTS');assert(label,'FINAL CHIP COUNTS shown');assert(!done.text.some(t=>t.value==='CHIP COUNTS SO FAR'));
  assert(done.text.some(t=>t.value==='DAY 2 STARTS SAT 29 NOV · 12:00'),'Day 2 start by the label on a single page');
- assert(done.text.some(t=>t.value==='Final prize pool: £15,000'));assert(done.text.some(t=>t.value==='All flights complete'));
+ assert(done.text.some(t=>t.value==='£15,000 collected'));assert(done.text.some(t=>t.value==='All flights complete'));
  const open=draw(rows.slice(0,6),f,{name:'BPS',flights:'8'});assert(!open.text.some(t=>t.value==='FINAL CHIP COUNTS'));assert(!open.text.some(t=>/^DAY 2 STARTS/.test(t.value)));
  const unset=draw(rows,f,{name:'BPS'});assert(!unset.text.some(t=>/CHIP COUNTS$/.test(t.value)),'no status label when flights are not set');
  const all=players(29).map((p,i)=>({...p,flight:'ABCDEFGH'[i%8]})),pages=pageSet(all,f);

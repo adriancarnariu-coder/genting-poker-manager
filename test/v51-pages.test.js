@@ -162,11 +162,11 @@ test('header: date line, then "N qualified · £X prize pool"; prize pool option
  assert.equal(prizePool('14250'),'£14,250');assert.equal(prizePool('£1,234.5'),'£1,234.50');assert.equal(prizePool('1.234'),null);assert.equal(prizePool(''),null);
  const h=headerText({name:'BPS Main Event',date:'2026-11-24',time:'18:15',prizePool:'14250'},players(54),{number:2,total:2,totalPlayers:54});
  assert.equal(h.title,'BPS Main Event · Day 2');assert.equal(h.info,'24 Nov 2026 · 18:15');
- assert.deepEqual(h.sub,[{text:'54 qualified'}]);assert.deepEqual(h.prizeLine,[{text:'Prize pool so far: £14,250',highlight:true}]);assert.equal(h.pageLabel,'2 / 2');
+ assert.deepEqual(h.sub,[{text:'54 qualified'}]);assert.deepEqual(h.prizeLine,[{text:'£14,250 collected',highlight:true}]);assert.equal(h.pageLabel,'2 / 2');
  assert.deepEqual(headerText({},players(3)).sub,[{text:'3 qualified'}]);
  const all=players(54),opts=pageOptions(all),details={name:'BPS Main Event',date:'2026-11-24',time:'18:15',prizePool:'14250'};
  const draws=opts.map(({rows,page})=>render2(rows,page,details));
- draws.forEach(d=>{for(const v of ['24 Nov 2026 · 18:15','54 qualified','Prize pool so far: £14,250'])assert(d.text.includes(v),v);assert(!d.text.some(v=>/entries|avg stack|chip leader/i.test(v)));assert.equal(d.canvas.height,draws[0].canvas.height);});
+ draws.forEach(d=>{for(const v of ['24 Nov 2026 · 18:15','54 qualified','£14,250 collected'])assert(d.text.includes(v),v);assert(!d.text.some(v=>/entries|avg stack|chip leader/i.test(v)));assert.equal(d.canvas.height,draws[0].canvas.height);});
 });
 
 test('table centred: same gap above the table, between the table and the band, and under the band',()=>{
@@ -187,7 +187,7 @@ test('header prize line: "1st place £X" under the qualified line, each part opt
  assert.deepEqual(headerText({firstPrize:'4,015.50'},players(40)).extra,[{text:'1st place £4,015.50',highlight:true}]);
  assert.deepEqual(headerText({paid:'abc',firstPrize:''},players(40)).extra,[]);
  const r=render2(players(30),undefined,{name:'BPS',date:'2026-11-24',time:'18:15',prizePool:'14250',paid:'12',firstPrize:'4015'});
- for(const v of ['30 qualified','Prize pool so far: £14,250','1st place £4,015'])assert(r.text.includes(v),v);assert(!r.text.includes('12 ITM'));
+ for(const v of ['30 qualified','£14,250 collected','1st place £4,015'])assert(r.text.includes(v),v);assert(!r.text.includes('12 ITM'));
  const plain=render2(players(30),undefined,{name:'BPS',date:'2026-11-24',time:'18:15'});assert(!plain.text.some(v=>/ITM|1st place/.test(v)));
 });
 
@@ -213,14 +213,14 @@ test('flights: count 1-8, flights still to play, header line and checks',()=>{
  assert.equal(flightCount('8'),8);
  const rows=['A','B','C','D','E'].map((f,i)=>({rank:i+1,name:'P'+i,flight:'Day 1'+f,chips:1000-i}));
  assert.deepEqual(flightsToPlay(8,rows),['F','G','H']);assert.deepEqual(flightsToPlay(5,rows),[]);assert.deepEqual(flightsToPlay(0,rows),[]);
- assert.deepEqual(headerText({flights:'8'},rows).flights,[{text:'Flights remaining: 1F–1H'}]);
- assert.deepEqual(headerText({flights:'6'},rows).flights,[{text:'Flights remaining: 1F'}]);
+ assert.deepEqual(headerText({flights:'8'},rows).flights,[{text:'1F–1H left'}]);
+ assert.deepEqual(headerText({flights:'6'},rows).flights,[{text:'1F left'}]);
  assert.deepEqual(headerText({flights:'5'},rows).flights,[],'all played: no line');assert.deepEqual(headerText({},rows).flights,[],'no total: no line');
- assert.deepEqual(headerText({flights:'4'},[rows[0],rows[2]]).flights,[{text:'Flights remaining: 1B, 1D'}]);assert.deepEqual(headerText({},[]).flights,[]);
- assert.deepEqual(headerText({flights:'8',firstPrize:'100',prizePool:'500'},rows).lines.map(l=>l.map(s=>s.text).join(' · ')),['Prize pool so far: £500','5 qualified · Flights remaining: 1F–1H','1st place £100'],'prize line, then qualified with flights remaining');
+ assert.deepEqual(headerText({flights:'4'},[rows[0],rows[2]]).flights,[{text:'1B, 1D left'}]);assert.deepEqual(headerText({},[]).flights,[]);
+ assert.deepEqual(headerText({flights:'8',firstPrize:'100',prizePool:'500'},rows).lines.map(l=>l.map(s=>s.text).join(' · ')),['£500 collected','5 qualified · 1F–1H left','1st place £100'],'prize line, then qualified with flights remaining');
  assert.equal(headerText({flights:'8',firstPrize:'100'},rows).lines.length,2,'qualified + flights share a line');
  const r=render2(players(20).map(p=>({...p,flight:'A'})),undefined,{name:'BPS',flights:'3',prizePool:'1000'});
- assert(r.text.includes('Flights remaining: 1B, 1C'));
+ assert(r.text.includes('1B, 1C left'));
  const g=[{rank:1,name:'X',flight:'Day 1G',chips:10}];
  assert(exportChecks({name:'X',date:'2026-11-24',flights:'6'},g).some(m=>/Day 1G, but the event is set to 6 flights/.test(m)));
  assert(!exportChecks({name:'X',date:'2026-11-24',flights:'8'},g).some(m=>/event is set to/.test(m)));
@@ -262,12 +262,12 @@ test('flags: country names, demonyms and codes map to flags; shown only with a c
 
 test('guarantee: "£15,000 of £100,000 GTD", GTD alone, plain prize pool without GTD; works with the flights line',()=>{
  const rows=['A','B'].flatMap((f,k)=>Array.from({length:3},(_,i)=>({rank:k*3+i+1,name:'P'+f+i,flight:'Day 1'+f,chips:1000-k*3-i})));
- assert.deepEqual(headerText({prizePool:'15000',gtd:'100000'},rows).prizeLine,[{text:'Prize pool so far: £15,000',highlight:true},{text:'£100,000 guaranteed'}]);
- assert.deepEqual(headerText({gtd:'100,000'},rows).prizeLine,[{text:'£100,000 guaranteed'}]);assert.deepEqual(headerText({},rows).prizeLine,[]);
- assert.deepEqual(headerText({prizePool:'15000',flights:'2'},rows).prizeLine,[{text:'Final prize pool: £15,000',highlight:true}],'all flights played');
+ assert.deepEqual(headerText({prizePool:'15000',gtd:'100000'},rows).prizeLine,[{text:'£15,000 collected',highlight:true},{text:'15% of GTD',colour:'#C5C8CE'}]);
+ assert.deepEqual(headerText({gtd:'100,000'},rows).prizeLine,[{text:'£100,000 GTD',colour:'#C5C8CE'}]);assert.deepEqual(headerText({prizePool:'17585',gtd:'100000'},rows).prizeLine.map(s=>s.text),['£17,585 collected','18% of GTD'],'rounded to the nearest whole percent');assert.deepEqual(headerText({prizePool:'17585',gtd:'0'},rows).prizeLine,[{text:'£17,585 collected',highlight:true}],'no percent with a zero guarantee');assert.deepEqual(headerText({},rows).prizeLine,[]);
+ assert.deepEqual(headerText({prizePool:'15000',flights:'2'},rows).prizeLine,[{text:'£15,000 collected',highlight:true}],'all flights played');
  const h=headerText({prizePool:'15000',gtd:'100000',flights:'8'},rows);
- assert.deepEqual(h.sub,[{text:'6 qualified'},{text:'Flights remaining: 1C–1H'}]);assert.equal(h.lines.length,2);
+ assert.deepEqual(h.sub,[{text:'6 qualified'},{text:'1C–1H left'}]);assert.equal(h.lines.length,2);
  const r=render2(rows,undefined,{name:'BPS',prizePool:'15000',gtd:'100000',flights:'8'});
- for(const v of ['6 qualified','Prize pool so far: £15,000','£100,000 guaranteed','Flights remaining: 1C–1H'])assert(r.text.includes(v),v);
+ for(const v of ['6 qualified','£15,000 collected','15% of GTD','1C–1H left'])assert(r.text.includes(v),v);
  assert(exportChecks({name:'X',date:'2026-11-24',gtd:'lots'},rows).some(m=>/Guarantee \(GTD\) is not a valid amount/.test(m)));
 });

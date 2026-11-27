@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "38298215b90c51cb8ae823f80553c31895601ea0bd000dcccc74f5bdd4691a1b",
-      "bytes": 59129,
+      "sha256": "982cfe52e25fa19f0b40ec1b8a13d21a143f607dca3eaacede1b9eb3209065fe",
+      "bytes": 59576,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -281,6 +281,13 @@
         "dist/index.html",
         "dist/model.js",
         "dist/session-backup.js"
+      ]
+    },
+    {
+      "version": "V52 short header",
+      "description": "Post / Story header: tournament name in capitals (type the short name, e.g. BPS200 Main), DAY 2 in champagne gold; prize line '£17,585 collected · 18% of GTD' (amount in gold, percent of the guarantee in light grey, rounded to the nearest whole number, omitted when the guarantee is missing or zero; guarantee only: '£100,000 GTD'); status line '29 qualified · 1C–1H left'. Above the table: 'CHIP COUNTS SO FAR' (or FINAL CHIP COUNTS) · 'STARTING BB 6,000' on the left, page indicator or Day 2 start on the right.",
+      "files": [
+        "dist/model.js"
       ]
     }
   ]

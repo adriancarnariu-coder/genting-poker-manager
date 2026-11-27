@@ -83,7 +83,7 @@ test('saved colon times and newly entered dot times display identically without 
 
 test('flights line only while flights are left, under the qualified line',()=>{
  const r=render(3,{date:'2026-12-03',flights:'3'});
- const qualified=r.text.find(t=>t.value==='3 qualified'),flights=r.text.find(t=>t.value==='Flights remaining: 1B, 1C');
+ const qualified=r.text.find(t=>t.value==='3 qualified'),flights=r.text.find(t=>t.value==='1B, 1C left');
  assert(qualified&&flights);assert.equal(flights.y,qualified.y,'flights remaining on the qualified line');
  assert(!render(3,{date:'2026-12-03'}).text.some(t=>/^Flights/.test(t.value)),'no total: no line');
  assert(!render(3,{date:'2026-12-03',flights:'1'}).text.some(t=>/^Flights|flights played/.test(t.value)),'all played: no line');
