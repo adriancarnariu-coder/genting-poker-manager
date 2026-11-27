@@ -449,9 +449,12 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  let band=null;
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=44*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
  const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
- const rowH=Math.min(format.maxRow,Math.floor((area-rowHead-bandH-gaps*24-fixed)/format.perPage)),size=Math.max(18,Math.min(28,Math.round(rowH*.5)));
- const showFlags=branding.flags!==false&&all.some(r=>countryCode(r.nationality)),fw=Math.round(size*1.15),fh=Math.round(fw*2/3),fSpace=showFlags?fw+10:0;
- const gap=(area-rowHead-bandH-fixed-format.perPage*rowH)/gaps;
+ // A single page with fewer players than a full page is laid out for its own rows: bigger rows and text (up to
+ // 84 px rows, 34 px text) and the whole block centred with equal gaps. Several pages keep one layout for all.
+ const slots=page?format.perPage:Math.max(1,rows.length),few=slots<format.perPage;
+ const rowH=Math.min(few?84:format.maxRow,Math.floor((area-rowHead-bandH-gaps*24-fixed)/slots)),size=Math.max(18,Math.min(few?34:28,Math.round(rowH*.5)));
+ const showFlags=branding.flags!==false&&all.some(r=>countryCode(r.nationality)),fw=Math.round(size*1.15),fh=Math.round(fw*2/3),fGap=Math.max(0,Math.round(size*.3)-6),fSpace=showFlags?fw+10:0;
+ const gap=(area-rowHead-bandH-fixed-slots*rowH)/gaps;
  let y=format.top+gap;
  const gentingCrop=branding.gentingCrop||{x:0,y:0,w:logo.naturalWidth,h:logo.naturalHeight},g=fitInZone(gentingCrop,{x:M,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'left');
  c.drawImage(logo,gentingCrop.x,gentingCrop.y,gentingCrop.w,gentingCrop.h,g.x,g.y,g.w,g.h);
@@ -465,7 +468,7 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  put('RANK',M+rankW-12,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});put('PLAYER NAME',nameX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});
  put('QUALIFIED FROM',flightX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'left'});put('CHIP COUNT',chipX,y+14,{size:15,weight:700,arial:true,colour:'#eee',align:'right'});
  y+=32;
- if(band)band.y=y+format.perPage*rowH-3+gap;
+ if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;
  rows.forEach((r,j)=>{const top=y+j*rowH,mid=top+(rowH-3)/2,leader=r.chips===topChips;
   c.fillStyle=leader?LEADER.fill:j%2?(rowTheme?.rowB||'#292A2D'):(rowTheme?.rowA||'#202124');c.fillRect(M,top,W-2*M,rowH-3);if(j===rows.length-1){c.fillStyle=TABLE_EDGE;c.fillRect(M,top+rowH-5,W-2*M,2);}
@@ -473,8 +476,8 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
   const strong=leader?LEADER.text:'#fff';
   const medal=MEDALS[Number(r.rank)];if(medal){c.font=TABLE_FONT(size,700);drawMedal(c,M+rankW-12-c.measureText(String(r.rank)).width/2,mid,Math.round(size*.8),medal);}
   put(String(r.rank),M+rankW-12,mid,{size,arial:true,weight:medal?700:400,colour:medal?MEDAL_INK:strong,align:'right'});
-  if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX,mid-fh/2,fw,fh);}
-  put(String(r.name),nameX+fSpace,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax-fSpace});
+  if(fSpace){const code=countryCode(r.nationality);if(code)drawFlag(c,code,nameX+fGap,mid-fh/2,fw,fh);}
+  put(String(r.name),nameX+fGap+fSpace,mid,{size,arial:true,colour:'#fff',align:'left',max:nameMax-fSpace-fGap});
   put(qualifiedFrom(r.flight),flightX,mid,{size,arial:true,colour:'#fff',align:'left',max:flightW-10});
   put(r.chips.toLocaleString('en-GB'),chipX,mid,{size,arial:true,colour:strong,align:'right',max:chipW-10});
   if(bb){c.font=TABLE_FONT(size);const used=c.measureText(r.chips.toLocaleString('en-GB')).width;put(bbLabel(r.chips,bb),chipX-used-12,mid,{size:Math.round(size*BB_STYLE.scale),arial:true,colour:leader?LEADER.gold:BB_STYLE.colour,align:'right',max:chipW-used-24});}

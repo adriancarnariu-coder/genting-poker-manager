@@ -97,3 +97,13 @@ test('few players: the responsible gambling band is smaller (64% at 1 player, fu
  const h=n=>{let bh=0;const c={fillRect(){},drawImage(...a){if(a[0]===band)bh=a[4];},beginPath(){},arc(){},fill(){},measureText(v){return {width:String(v).length*10};},fillText(){}};drawSocial({getContext:()=>c},players(n),genting,{time:''},band,{},SOCIAL_FORMATS.square);return bh;};
  assert(h(2)<h(12));assert(Math.abs(h(12)-44)<1e-9);
 });
+
+test('a short single page is laid out for its own rows: bigger rows, block centred with equal gaps',()=>{
+ const f=SOCIAL_FORMATS.square,rowsOf=r=>r.rects.filter(x=>x.x===40&&x.h<120&&['#202124','#292A2D','#33301F'].includes(x.colour));
+ const few=draw(players(4),f,{time:'18:15',name:'BPS'}),full=draw(players(15),f,{time:'18:15',name:'BPS'});
+ assert(rowsOf(few)[0].h>rowsOf(full)[0].h,'rows are taller with few players');
+ const b=few.images.find(a=>a[0]===band),tableEnd=Math.max(...rowsOf(few).map(x=>x.y+x.h)),above=b[2]-tableEnd,below=1080-(b[2]+b[4]);
+ assert(Math.abs(above-below)<=1,`${above}/${below}`);
+ const sizes=r=>new Set(r.text.filter(t=>t.value.startsWith('Player ')).map(t=>t.font));
+ assert.notDeepEqual([...sizes(few)],[...sizes(full)],'bigger text for few players');
+});
