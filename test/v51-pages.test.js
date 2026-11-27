@@ -223,3 +223,15 @@ test('flights: count 1-8, flights still to play, header line and checks',()=>{
  assert(exportChecks({name:'X',date:'2026-11-24',flights:'6'},g).some(m=>/Day 1G, but the event is set to 6 flights/.test(m)));
  assert(!exportChecks({name:'X',date:'2026-11-24',flights:'8'},g).some(m=>/event is set to/.test(m)));
 });
+
+test('ties: equal stacks share the place, listed alphabetically; the next place skips (1, 2, 2, 4)',async()=>{
+ const {publicRows,staffRows}=await import('../dist/model.js');
+ const rec=(key,name,chips,gdpr='Y')=>({key,qualified:true,originalName:name,originalGdpr:gdpr,flight:'A',chips});
+ const records=[rec('1','Zoe Young',874000),rec('2','Adam Brown',874000),rec('3','Lee Chen',900000),rec('4','Mia Ford',500000),rec('5','Ben Hall',874000,'N')];
+ const p=publicRows(records),s=staffRows(records);
+ assert.deepEqual(p.map(r=>[r.rank,r.chips]),[[1,900000],[2,874000],[2,874000],[2,874000],[5,500000]]);
+ assert.deepEqual(s.map(r=>r.name),['Lee Chen','Adam Brown','Ben Hall','Zoe Young','Mia Ford']);
+ assert.deepEqual(p.map(r=>r.name),['Lee Chen','Adam Brown','B. H.','Zoe Young','Mia Ford'],'public order follows the full names, initials shown');
+ assert.deepEqual(p.map(r=>r.rank),s.map(r=>r.rank));
+ const again=publicRows([...records].reverse());assert.deepEqual(again,p,'import order does not matter');
+});

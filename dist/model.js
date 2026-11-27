@@ -78,8 +78,11 @@ export function parseWorkbook(XLSX,bytes,filename){
  if(!records.length)throw Error('The file contains no player records.');return records;
 }
 export const invalidRecords=records=>{const dropped=droppedKeys(records);return records.filter(r=>r.qualified&&!dropped.has(r.key)&&(!text(r.originalName)||r.chips===null||r.chips<=0||!normalizeFlight(flightValue(r))));};
-export function publicRows(records){const dropped=droppedKeys(records);return records.filter(r=>r.qualified&&!dropped.has(r.key)).sort((a,b)=>(b.chips??-1)-(a.chips??-1)).map((r,i)=>({rank:i+1,name:!r.consentConflict&&nameConsent(r.originalGdpr)?text(r.originalName):initials(r.originalName),nationality:publicNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
-export function staffRows(records){const dropped=droppedKeys(records);return records.filter(r=>r.qualified&&!dropped.has(r.key)).sort((a,b)=>(b.chips??-1)-(a.chips??-1)).map((r,i)=>({rank:i+1,name:text(r.originalName)||'—',nationality:staffNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
+// V51 ties: equal stacks share the same place (e.g. 1, 2, 3, 3, 5) and are listed alphabetically by name,
+// so the order never depends on which file was imported first. Staff and public views use the same order.
+function ranked(records){const dropped=droppedKeys(records);const list=records.filter(r=>r.qualified&&!dropped.has(r.key)).sort((a,b)=>(b.chips??-1)-(a.chips??-1)||text(a.originalName).localeCompare(text(b.originalName),'en-GB',{sensitivity:'base'})||String(a.key??'').localeCompare(String(b.key??'')));let rank=0;return list.map((r,i)=>{if(i===0||r.chips!==list[i-1].chips||r.chips===null)rank=i+1;return {r,rank};});}
+export function publicRows(records){return ranked(records).map(({r,rank})=>({rank,name:!r.consentConflict&&nameConsent(r.originalGdpr)?text(r.originalName):initials(r.originalName),nationality:publicNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
+export function staffRows(records){return ranked(records).map(({r,rank})=>({rank,name:text(r.originalName)||'—',nationality:staffNationality(r),flight:qualifiedFrom(flightValue(r)),chips:r.chips}));}
 // Search the supplied display projection; JPEG generation uses publicRows separately.
 export function filterRows(rows,{name='',nationality='',flight='',chipCount=''}={}){
  const n=text(name).toLocaleLowerCase(),nation=text(nationality).toLocaleLowerCase(),flightQuery=text(flight),f=normalizeFlight(flightQuery),query=text(chipCount),prefix=query.replace(/[, \u00a0]/g,'');
