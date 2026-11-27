@@ -252,7 +252,7 @@ export function dayTheme(palette,date){
   (c,w,H)=>linear(c,0,0,w,0,[[0,hsl(5)],[.5,hsl(13)],[1,hsl(5)]]),
   (c,w,H)=>radial(c,w/2,H,Math.max(w,H)*.9,[[0,hsl(15)],[1,hsl(5)]])
  ];
- return {day,dayName:DAY_NAMES[day],base:hsl(5),rowA:'rgba(0,0,0,0)',rowB:accent(.07),paint(c,w,H){c.fillStyle=variants[day](c,w,H);c.fillRect(0,0,w,H);if(day===5||day===6){c.fillStyle=accent(.55);c.fillRect(0,0,w,3);c.fillRect(0,H-3,w,3);}}};
+ return {day,dayName:DAY_NAMES[day],base:hsl(5),rowA:'rgba(0,0,0,0)',rowB:accent(.07),paint(c,w,H){c.fillStyle=variants[day](c,w,H);c.fillRect(0,0,w,H);c.fillStyle=accent(.55);c.fillRect(0,0,w,3);c.fillRect(0,H-3,w,3);c.fillRect(0,0,3,H);c.fillRect(w-3,0,3,H);}};
 }
 // V51 country flags next to names. Countries come from the Excel nationality column and are shown only when the
 // player gave GDPR consent (same rule as the full name). Flags are drawn here (no emoji, no downloaded images) in a

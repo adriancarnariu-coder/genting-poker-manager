@@ -118,3 +118,11 @@ test('post template: RANK | PLAYER | BB | CHIPS headings on every page, exact ch
  const r=draw(pages[0].rows,f,{time:'18:15'},pages[0].page);
  assert(r.text.some(t=>t.value===all[0].chips.toLocaleString('en-GB'))&&all[0].chips.toLocaleString('en-GB').includes(','),'exact chips with thousands separator');assert(!r.text.some(t=>t.value==='BB'),'no BB heading without a big blind');
 });
+
+test('logo background: thin gold frame on all four sides, every day',async()=>{
+ const {dayTheme}=await import('../dist/model.js');
+ const palette={accent:[201,169,106],hue:40,sat:.5};
+ for(let d=23;d<=29;d++){const rects=[];const c={createLinearGradient(){return {addColorStop(){}};},createRadialGradient(){return {addColorStop(){}};},fillRect(x,y,w,h){rects.push([x,y,w,h,this.fillStyle]);}};
+  dayTheme(palette,'2026-11-'+d).paint(c,1080,1080);const gold=rects.filter(r=>String(r[4]).startsWith('rgba(201,169,106'));
+  assert.deepEqual(gold.map(r=>r.slice(0,4)),[[0,0,1080,3],[0,1077,1080,3],[0,0,3,1080],[1077,0,3,1080]],'day '+d);}
+});
