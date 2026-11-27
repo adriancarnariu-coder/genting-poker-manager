@@ -83,8 +83,8 @@
     },
     {
       "path": "dist/model.js",
-      "sha256": "3ef8df9cfaa7abd0532a7f01f8a4d4a10ac6f0d6071da9539bd0d348901c31e5",
-      "bytes": 56920,
+      "sha256": "fdee222d56775df5e2cfd76ee851fcd54b9db2bf6d0d11181059d789804d63f7",
+      "bytes": 58368,
       "localDeploymentAssetSha256": "b25e2eee2c8c6e4ad1ee821cd25087ccdc413b7abcfe2274be9f34a82ab27271",
       "lineEndingsOnly": false
     },
@@ -257,6 +257,13 @@
         "dist/index.html",
         "dist/responsible-gambling.png",
         "dist/app.js"
+      ]
+    },
+    {
+      "version": "V52 post layout v3",
+      "description": "Instagram post 1080 x 1080: 20 players per page with the remainder split evenly over the last two pages (second-to-last gets the extra player; 29 = 15 + 14, 153 = 6 x 20 + 17 + 16); same columns, row height and footer on every page. Header: tournament name in white, DAY 2 on its own line in champagne gold #E6C88A (letter-spaced), optional Day 2 starting BB. Above the table: PROVISIONAL CHIP COUNTS while flights remain and PAGE X OF Y on the right. No RANK label (numbers and medals kept); PLAYER aligned with the names after the flag space, which is kept on every row.",
+      "files": [
+        "dist/model.js"
       ]
     }
   ]

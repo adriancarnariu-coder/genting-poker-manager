@@ -193,7 +193,8 @@ export function headerText(tournament={},all=[],page){
  const sub=[{text:total+' qualified'},...flights];
  // Optional line: first prize and min cash, e.g. "1st place £4,015 · min cash £150".
  const first=prizePool(tournament.firstPrize),minCash=prizePool(tournament.minCash);
- const extra=[...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
+ const startBB=bigBlind(tournament.bb);
+ const extra=[...(startBB?[{text:'Day 2 starting BB: '+startBB.toLocaleString('en-GB')}]:[]),...(first?[{text:'1st place '+first,highlight:true}]:[]),...(minCash?[{text:'min cash '+minCash}]:[])];
  const lines=[prizeLine,sub,extra].filter(line=>line.length);
  return {name,title,info,prizeLine,sub,extra,flights,lines,pageShort:page?.total>1?page.number+'/'+page.total:'',pageLabel:page?.total>1?page.number+' / '+page.total:''};
 }
@@ -208,6 +209,8 @@ function drawSegments(c,segments,cx,y,font,max){
 // A thin line under the last row marks the end of the table, so the gap to the band reads as equal.
 // V52 short chip counts for Instagram: 874,500 -> "874.5K", 1,250,000 -> "1.25M".
 export function shortChips(n){if(!Number.isFinite(n))return '';const trim=(v,d)=>String(Number(v.toFixed(d)));if(n>=1e6||Number((n/1e3).toFixed(1))>=1000)return trim(n/1e6,2)+'M';if(n>=1e3)return trim(n/1e3,1)+'K';return String(n);}
+// Colour of the "DAY 2" line under the tournament name (champagne gold).
+export const DAY_GOLD='#E6C88A';
 export const BAND_GAP=40,TABLE_EDGE='#5F6368';
 // V51: with only a few players the responsible gambling band is drawn smaller (64% at 1 player, full size from 10),
 // so it does not dominate a short leaderboard.
@@ -422,10 +425,13 @@ export function drawLeaderboard(canvas,rows,logo,tournament={},responsibleBand,p
 // same colours, logos, chip leader, IN THE MONEY line and summary strip as the full leaderboard.
 // Story keeps the top 230 px and bottom 270 px clear of key content (Instagram profile bar and reply box).
 export const SOCIAL_FORMATS={
- square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4},
+ square:{key:'square',width:1080,height:1080,top:0,bottom:0,perPage:20,maxRow:64,band:26.4,balanceLast:true},
  story:{key:'story',width:1080,height:1920,top:250,bottom:250,perPage:20,maxRow:60,band:44}
 };
-export function socialPages(rows,format){const out=[];for(let i=0;i<rows.length;i+=format.perPage)out.push(rows.slice(i,i+format.perPage));return out;}
+// Post: full pages of 20 first, then the remainder split evenly over the last two pages (odd: the second-to-last
+// page gets one more), e.g. 29 = 15 + 14, 69 = 20 + 20 + 15 + 14, 118 = 4 x 20 + 19 + 19. Other formats fill pages in turn.
+export function pageSizes(n,per,balanceLast=false){if(n<=0)return [];const pages=Math.ceil(n/per);if(pages===1)return [n];if(!balanceLast)return Array.from({length:pages},(_,i)=>Math.min(per,n-i*per));const rest=n-per*(pages-2);return [...Array(pages-2).fill(per),Math.ceil(rest/2),Math.floor(rest/2)];}
+export function socialPages(rows,format){const out=[];let i=0;for(const size of pageSizes(rows.length,format.perPage,!!format.balanceLast)){out.push(rows.slice(i,i+size));i+=size;}return out;}
 export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,branding={},format=SOCIAL_FORMATS.square){
  if(!rows.length)throw Error('There are no qualified players.');
  if(rows.some(r=>!normalizeFlight(r.flight)))throw Error('Check unrecognised flights before exporting.');
@@ -447,23 +453,26 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  // Frame: the same gap above the header, between the header and the table, between the table and the band and
  // under the band. The Post uses the whole image; the Story keeps 250 px clear at the top and bottom for Instagram.
  const zoneW=270,zoneH=Math.round(zoneW*620/1440),head=headerText(tournament,all,page),middleW=W-2*M-2*zoneW-32;
- let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=titleLines(c,head,middleW);
- while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=titleLines(c,head,middleW);}
+ // Tournament name in white (up to two lines), then "DAY 2" on its own line in champagne gold, letter-spaced.
+ const titleText=head.name||'Leaderboard',dayGold=branding.dayColour||DAY_GOLD;
+ let tsize=38;c.font='800 '+tsize+'px Montserrat';let tlines=wrapTournamentName(c,titleText,middleW);
+ while(tlines.length>2&&tsize>24){tsize-=2;c.font='800 '+tsize+'px Montserrat';tlines=wrapTournamentName(c,titleText,middleW);}
  if(tlines.length>2)tlines=[tlines[0],tlines.slice(1).join(' ')];
- // Post: the page indicator sits next to the leaderboard title ("Day 2 · 1/2") instead of the bottom corner.
- if(format.key==='square'&&head.pageShort)tlines[tlines.length-1]+=' · '+head.pageShort;
+ const dsize=Math.round(tsize*.66);
  const isize=head.info?fit(head.info,20,600,middleW):0,lsize=Math.min(...head.lines.map(line=>fit(line.map(s=>s.text).join('  ·  '),20,600,middleW)));
- const firstRel=tlines.length*tsize*1.12+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
- // V52 clean table: rank, flag, name and chips only (no flight column, no column headings).
- // Columns RANK | PLAYER | BB | CHIPS (BB only when a Day 2 big blind is set); BB and chips right-aligned, apart.
+ const firstRel=tlines.length*tsize*1.12+dsize*1.3+(head.info?6+isize*1.2:0)+6+lsize*.6,lstep=lsize*1.2+6,visTop=tsize*.56-tsize*CAP,blockH=firstRel+(head.lines.length-1)*lstep+lsize*DESC-visTop,rowHead=Math.max(zoneH,blockH);
+ // Above the table: "PROVISIONAL CHIP COUNTS" while flights remain (left) and "PAGE 1 OF 6" (right).
+ const provisional=head.flights.length>0,pageText=page?.total>1?`PAGE ${page.number} OF ${page.total}`:'',labelRow=provisional||pageText?30:0;
+ // Columns: rank number / medal (no RANK label), flag, PLAYER, BB (when a Day 2 big blind is set), CHIPS.
  const bb=bigBlind(tournament.bb),rankW=78,nameX=M+rankW+10,chipX=W-M-14,chipW=170,bbX=chipX-chipW-28,bbW=bb?90:0,nameMax=(bb?bbX-bbW:chipX-chipW)-nameX-16;
  let band=null;
  if(responsibleBand){const aspect=responsibleBand.naturalWidth/responsibleBand.naturalHeight,bh=(format.band||44)*bandScale(all.length),bw=Math.min(W-2*M,bh*aspect);band={x:(W-bw)/2,y:0,w:bw,h:bw/aspect};}
- const area=H-format.top-format.bottom,fixed=41,bandH=band?band.h:0,gaps=band?4:3;
+ const area=H-format.top-format.bottom,fixed=41+labelRow,bandH=band?band.h:0,gaps=band?4:3;
  // A single page with fewer players than a full page is laid out for its own rows: bigger rows and text (up to
  // 84 px rows, 34 px text) and the whole block centred with equal gaps. Several pages keep one layout for all.
  const slots=page?format.perPage:Math.max(1,rows.length),few=slots<format.perPage;
  const rowH=Math.min(few?84:format.maxRow,Math.floor((area-rowHead-bandH-gaps*24-fixed)/slots)),size=Math.max(18,Math.min(few?34:28,Math.round(rowH*.5)));
+ // The flag space is kept on every row (also without a flag) so all names start at the same place.
  const showFlags=branding.flags!==false&&all.some(r=>countryCode(r.nationality)),fw=Math.round(size*1.15),fh=Math.round(fw*2/3),fGap=Math.max(0,Math.round(size*.3)-6),fSpace=showFlags?fw+10:0;
  const gap=(area-rowHead-bandH-fixed-slots*rowH)/gaps;
  let y=format.top+gap;
@@ -473,11 +482,14 @@ export function drawSocial(canvas,rows,logo,tournament={},responsibleBand,brandi
  if(brandImage?.naturalWidth>0&&brandImage?.naturalHeight>0){const crop=branding.tournamentLogo.crop||{x:0,y:0,w:brandImage.naturalWidth,h:brandImage.naturalHeight},b=fitInZone(crop,{x:W-M-zoneW,y:y+(rowHead-zoneH)/2,w:zoneW,h:zoneH},'right');c.drawImage(brandImage,crop.x,crop.y,crop.w,crop.h,b.x,b.y,b.w,b.h);}
  let my=y+(rowHead-blockH)/2-visTop;const originY=my;
  for(const t of tlines){put(t,W/2,my+tsize*.56,{size:tsize,weight:800,tracking:-.015,max:middleW});my+=tsize*1.12;}
+ put('DAY 2',W/2,my+dsize*.62,{size:dsize,weight:800,colour:dayGold,tracking:.14,max:middleW});my+=dsize*1.3;
  if(head.info){put(head.info,W/2,my+6+isize*.6,{size:isize,weight:600,colour:'#C5C8CE',max:middleW});my+=6+isize*1.2;}
  head.lines.forEach((line,i)=>drawSegments(c,line,W/2,originY+firstRel+i*lstep,'600 '+lsize+'px Montserrat',middleW));
- y+=rowHead+gap;c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
+ y+=rowHead+gap;
+ if(labelRow){const label={size:14,weight:700,colour:'#C5C8CE',tracking:.1};if(provisional)put('PROVISIONAL CHIP COUNTS',M,y+10,{...label,align:'left'});if(pageText)put(pageText,W-M,y+10,{...label,align:'right'});y+=labelRow;}
+ c.fillStyle='#cc1428';c.fillRect(M,y,W-2*M,2);y+=12;
  const headStyle={size:15,weight:700,arial:true,colour:'#C5C8CE'};
- put('RANK',M+rankW-12,y+14,{...headStyle,align:'right'});put('PLAYER',nameX,y+14,{...headStyle,align:'left'});if(bb)put('BB',bbX,y+14,{...headStyle,align:'right'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
+ put('PLAYER',nameX+fGap+fSpace,y+14,{...headStyle,align:'left'});if(bb)put('BB',bbX,y+14,{...headStyle,align:'right'});put('CHIPS',chipX,y+14,{...headStyle,align:'right'});
  y+=32;
  if(band)band.y=y+slots*rowH-3+gap;
  const topChips=Math.max(...all.map(r=>r.chips)),paid=placesPaid(tournament.paid),lastPaid=paid?all.findLastIndex(r=>Number(r.rank)<=paid):-1,bubbleRow=lastPaid>=0&&lastPaid<all.length-1?all[lastPaid]:null;let bubble=null;

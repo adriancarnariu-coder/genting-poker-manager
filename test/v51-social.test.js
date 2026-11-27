@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {drawSocial,socialPages,SOCIAL_FORMATS} from '../dist/model.js';
+import {drawSocial,socialPages,pageSizes,SOCIAL_FORMATS,DAY_GOLD} from '../dist/model.js';
 
 const genting={naturalWidth:1440,naturalHeight:620},band={naturalWidth:2000,naturalHeight:107};
 const players=n=>Array.from({length:n},(_,i)=>({rank:i+1,name:'Player '+String(i+1).padStart(2,'0'),flight:'A',chips:(n-i)*1000}));
@@ -15,7 +15,7 @@ const pageSet=(all,format)=>{const pages=socialPages(all,format);return pages.ma
 test('exact sizes: post 1080 × 1080 with 20 per page, Story 1080 × 1920 with 20 per page',()=>{
  assert.deepEqual([SOCIAL_FORMATS.square.width,SOCIAL_FORMATS.square.height,SOCIAL_FORMATS.square.perPage],[1080,1080,20]);
  assert.deepEqual([SOCIAL_FORMATS.story.width,SOCIAL_FORMATS.story.height,SOCIAL_FORMATS.story.perPage],[1080,1920,20]);
- assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[20,9],'29 players: 1-20 then 21-29');
+ assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.square).map(p=>p.length),[15,14],'29 players: 1-15 then 16-29');
  assert.deepEqual(socialPages(players(40),SOCIAL_FORMATS.story).map(p=>p.length),[20,20]);
  for(const f of Object.values(SOCIAL_FORMATS)){const {canvas}=draw(players(f.perPage),f);assert.equal(canvas.width,f.width);assert.equal(canvas.height,f.height);}
 });
@@ -46,7 +46,7 @@ test('chip leader, IN THE MONEY and page labels work in the social formats',()=>
  assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#33301F'||(x.colour==='#D4AF37'&&(x.w===3||x.h===3))).length),[0,0,0],'no gold frame or tint on the leader row');assert(!results.some(r=>r.text.some(t=>/chip leader/i.test(t.value))));
  assert.deepEqual(results.map(r=>r.rects.filter(x=>x.colour==='#D4AF37'&&x.h===4).length),[0,1,0]);
  assert(!results.some(r=>r.text.some(t=>/ITM/.test(t.value))));
- results.forEach((r,i)=>{assert(r.text.some(t=>t.value.endsWith(`Day 2 · ${i+1}/3`)),'page indicator next to the title');assert(!r.text.some(t=>/^\d+ \/ \d+$/.test(t.value)),'no corner page label on the post');});
+ results.forEach((r,i)=>{assert(r.text.some(t=>t.value===`PAGE ${i+1} OF 3`),'page indicator above the table');assert(!r.text.some(t=>/^\d+ \/ \d+$/.test(t.value)),'no corner page label on the post');});
  assert(results.every(r=>r.text.some(t=>t.value==='18:15')&&r.text.some(t=>t.value==='50 qualified')));
  assert(results.every(r=>r.rects.filter(x=>x.colour==='#202124'||x.colour==='#292A2D'||x.colour==='#33301F').map(x=>x.h).filter(h=>h<100).every((h,_,a)=>h===a[0])),'same row height on every page');
 });
@@ -108,17 +108,44 @@ test('a short single page is laid out for its own rows: bigger rows, block centr
  assert.notDeepEqual([...sizes(few)],[...sizes(full)],'bigger text for few players');
 });
 
-test('post template: RANK | PLAYER | BB | CHIPS headings on every page, exact chips, no flight column',()=>{
- const f=SOCIAL_FORMATS.square,all=players(29).map(p=>({...p,chips:p.chips*1000+500})),pages=pageSet(all,f);
- pages.forEach(({rows,page})=>{const r=draw(rows,f,{time:'18:15',bb:'2000'},page);
-  for(const h of ['RANK','PLAYER','BB','CHIPS'])assert(r.text.some(t=>t.value===h),h+' heading on page '+page.number);
-  assert(!r.text.some(t=>/^Day 1[A-H]$/.test(t.value)),'no qualified-from column');
-  const bbText=r.text.find(t=>t.value==='BB'),chips=r.text.find(t=>t.value==='CHIPS');assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');
- });
- const r=draw(pages[0].rows,f,{time:'18:15'},pages[0].page);
- assert(r.text.some(t=>t.value===all[0].chips.toLocaleString('en-GB'))&&all[0].chips.toLocaleString('en-GB').includes(','),'exact chips with thousands separator');assert(!r.text.some(t=>t.value==='BB'),'no BB heading without a big blind');
+test('post pagination: 20 per page, the remainder split over the last two pages',()=>{
+ const cases={1:[1],20:[20],21:[11,10],29:[15,14],40:[20,20],41:[20,11,10],69:[20,20,15,14],118:[20,20,20,20,19,19],119:[20,20,20,20,20,19],120:[20,20,20,20,20,20],153:[20,20,20,20,20,20,17,16],160:Array(8).fill(20)};
+ for(const [n,sizes] of Object.entries(cases)){
+  assert.deepEqual(pageSizes(Number(n),20,true),sizes,n+' players');
+  const pages=socialPages(players(Number(n)),SOCIAL_FORMATS.square);assert.deepEqual(pages.map(p=>p.length),sizes);
+  assert.deepEqual(pages.flat().map(p=>p.rank),Array.from({length:Number(n)},(_,k)=>k+1),'order and numbering kept');
+ }
+ assert.deepEqual(socialPages(players(29),SOCIAL_FORMATS.story).map(p=>p.length),[20,9],'Story fills pages in turn');
+ assert.deepEqual(pageSizes(0,20,true),[]);
 });
 
+test('post template: PLAYER | BB | CHIPS headings on every page (no RANK label), exact chips, no flight column',()=>{
+ const f=SOCIAL_FORMATS.square,all=players(29).map(p=>({...p,chips:p.chips*1000+500})),pages=pageSet(all,f);
+ const layout=[];
+ pages.forEach(({rows,page})=>{const r=draw(rows,f,{name:'BPS200 Main Event',time:'18:15',bb:'2000'},page);
+  for(const h of ['PLAYER','BB','CHIPS'])assert(r.text.some(t=>t.value===h),h+' heading on page '+page.number);
+  assert(!r.text.some(t=>t.value==='RANK'),'no RANK label');
+  assert(r.text.some(t=>t.value===String(rows[0].rank)||rows[0].rank<=3),'rank numbers kept');
+  assert(!r.text.some(t=>/^Day 1[A-H]$/.test(t.value)),'no qualified-from column');
+  const bbText=r.text.find(t=>t.value==='BB'),chips=r.text.find(t=>t.value==='CHIPS'),player=r.text.find(t=>t.value==='PLAYER'),name=r.text.find(t=>t.value.startsWith('Player '));
+  assert(chips.x-bbText.x>=150,'BB and CHIPS columns well apart');assert.equal(player.x,name.x,'PLAYER starts where the names start');
+  assert(r.text.some(t=>t.value==='DAY 2'),'DAY 2 on its own line');assert(r.text.some(t=>t.value==='BPS200 Main Event'),'title on its own');
+  assert(r.text.some(t=>t.value==='Day 2 starting BB: 2,000'));
+  layout.push([player.y,chips.x,r.rects.filter(x=>x.colour==='#cc1428').map(x=>x.y).join()]);
+ });
+ assert.deepEqual(layout[0],layout[1],'same heading and column positions on every page');
+ const r=draw(pages[0].rows,f,{time:'18:15'},pages[0].page);
+ assert(r.text.some(t=>t.value===all[0].chips.toLocaleString('en-GB'))&&all[0].chips.toLocaleString('en-GB').includes(','),'exact chips with thousands separator');assert(!r.text.some(t=>t.value==='BB'),'no BB heading without a big blind');
+ assert(!r.text.some(t=>/starting BB/.test(t.value)),'no starting BB line without a big blind');
+});
+
+test('post header: PROVISIONAL CHIP COUNTS only while flights remain, PAGE X OF Y only with several pages',()=>{
+ const f=SOCIAL_FORMATS.square,rows=players(12).map((p,i)=>({...p,flight:i<6?'A':'B'}));
+ const open=draw(rows,f,{name:'BPS',flights:'4'}),done=draw(rows,f,{name:'BPS',flights:'2'});
+ assert(open.text.some(t=>t.value==='PROVISIONAL CHIP COUNTS'));assert(!done.text.some(t=>t.value==='PROVISIONAL CHIP COUNTS'));
+ assert(!open.text.some(t=>/^PAGE /.test(t.value)),'single page: no page indicator');
+ const day=open.text.find(t=>t.value==='DAY 2');assert(day,'DAY 2 drawn');assert.equal(DAY_GOLD,'#E6C88A');
+});
 test('logo background: thin gold frame on all four sides, every day',async()=>{
  const {dayTheme}=await import('../dist/model.js');
  const palette={accent:[201,169,106],hue:40,sat:.5};
