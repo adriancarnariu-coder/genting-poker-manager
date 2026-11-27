@@ -1,7 +1,7 @@
 import {supportsSaveAs,saveJpegAs} from './jpeg-save-as.js';
 import {displayRows,loadedFlights,readyMessage,uniqueFilename} from './view-mode.js';
 import {mountClockPicker} from './clock-picker.js';
-import {serializeSessionBackup,parseSessionBackup,backupSummary,backupLimit} from './session-backup.js';
+import {serializeSessionBackup,parseSessionBackup,backupSummary,backupLimit,HISTORY_INDEX_KEY,historyKey,historyMeta,upsertHistory,removeHistory} from './session-backup.js';
 import {createJpegArtifact,retireJpegArtifact,shareJpegArtifact,jpegDataUrl} from './jpeg-actions.js';
 import {readExcelFile,readBytes} from './excel-import.js';
 import {visibleCrop,logoKeys,exportFilename,checkLogoFile,displayDate} from './branding.js';
@@ -14,7 +14,7 @@ const logo=new Image();logo.src='logo-ui.svg';const responsibleBand=new Image();
 function invalidate(){exportRevision++;$('#jpeg-save-help').open=false;closeJpegViewer();for(const page of jpegPages.length?jpegPages:[jpegArtifact])retireJpegArtifact(page);jpegPages=[];pageIndex=0;$('#jpeg-pages').hidden=true;jpegArtifact=null;url=null;for(const id of ['download','open-jpeg','share-jpeg','jpeg-save-help'])$('#'+id).hidden=true;$('#download').removeAttribute('href');$('#open-jpeg').removeAttribute('href');$('#jpeg-action-status').textContent='';$('#jpeg').hidden=true;$('#jpeg').removeAttribute('src');$('#export-status').textContent='';}
 function changed(){invalidate();$('#policy').checked=false;}
 function closeUndo(){clearTimeout(timer);undo=null;$('#undo-bar').hidden=true;}
-function render(){queueMicrotask(updateExportChecks);const all=records(),rows=displayRows(all,presentation),invalid=invalidRecords(all),groups=duplicateGroups(all);$('#loaded-flights').textContent=loadedFlights(all).length?'Qualified from: '+loadedFlights(all).join(' · '):'Qualified from: —';$('#file-summary').textContent=state.files.length+' '+(state.files.length===1?'file':'files')+' · '+rows.length+' qualified '+(rows.length===1?'player':'players');$('#generate').classList.toggle('export-secondary',!!jpegArtifact);$('#file-count').textContent=state.files.length;$('#player-count').textContent=rows.length;$('#chip-total').textContent=fmt(rows.reduce((s,r)=>s+(r.chips||0),0));$('#files').replaceChildren();
+function render(){queueMicrotask(updateExportChecks);if(typeof historyReady!=='undefined'&&historyReady)queueMicrotask(renderHistory);const all=records(),rows=displayRows(all,presentation),invalid=invalidRecords(all),groups=duplicateGroups(all);$('#loaded-flights').textContent=loadedFlights(all).length?'Qualified from: '+loadedFlights(all).join(' · '):'Qualified from: —';$('#file-summary').textContent=state.files.length+' '+(state.files.length===1?'file':'files')+' · '+rows.length+' qualified '+(rows.length===1?'player':'players');$('#generate').classList.toggle('export-secondary',!!jpegArtifact);$('#file-count').textContent=state.files.length;$('#player-count').textContent=rows.length;$('#chip-total').textContent=fmt(rows.reduce((s,r)=>s+(r.chips||0),0));$('#files').replaceChildren();
  for(const f of state.files){const li=el('li',''),desc=el('span',f.filename);desc.append(el('small',`${f.records.length} records · ${f.records.filter(r=>r.qualified).length} qualified`));const replace=el('button','REPLACE'),remove=el('button','REMOVE');replace.setAttribute('aria-label',`Replace ${f.filename}`);remove.className='remove-file';remove.setAttribute('aria-label',`Remove ${f.filename}`);replace.disabled=remove.disabled=busy;replace.onclick=()=>{const input=$('#replace-upload');input.value='';input.onchange=()=>{const files=Array.from(input.files||[]);input.value='';addFiles(files,f.id);};input.click();};remove.onclick=()=>removeFile(f.id);li.append(desc,replace,remove);$('#files').append(li);}
  if(!state.files.length)$('#files').append(el('li','No files uploaded yet.'));
  const filtered=filterRows(rows,{name:$('#search-name').value,nationality:presentation?'':$('#search-nationality').value,flight:$('#search-flight').value,chipCount:$('#search-chips').value});
@@ -180,3 +180,63 @@ var checksReady=true;updateExportChecks();
 // V51 drag and drop on desktop: files dropped anywhere on the upload panel are imported like picked files.
 // The native file input stays directly tappable (required on Android); a drop on the input itself is left to the browser.
 {const panel=$('.upload-panel'),hasFiles=e=>Array.from(e.dataTransfer?.types||[]).includes('Files');if(panel){panel.addEventListener('dragover',e=>{if(!hasFiles(e)||e.target===$('#upload'))return;e.preventDefault();e.dataTransfer.dropEffect='copy';panel.classList.add('drag-over');});panel.addEventListener('dragleave',e=>{if(!panel.contains(e.relatedTarget))panel.classList.remove('drag-over');});panel.addEventListener('drop',e=>{panel.classList.remove('drag-over');if(!hasFiles(e)||e.target===$('#upload'))return;e.preventDefault();const files=Array.from(e.dataTransfer.files||[]);if(files.length)addFiles(files);});}}
+// ---------- V51 tournament history (saved in this browser only).
+const memoryHistory=new Map();
+function historyStore(mode,key,value){
+ if(!db){if(mode==='get')return Promise.resolve(memoryHistory.get(key));if(mode==='put')memoryHistory.set(key,value);else memoryHistory.delete(key);return Promise.resolve();}
+ return new Promise((resolve,reject)=>{const tx=db.transaction('state',mode==='get'?'readonly':'readwrite'),store=tx.objectStore('state'),r=mode==='get'?store.get(key):mode==='put'?store.put(value,key):store.delete(key);let result;r.onsuccess=()=>{result=r.result;};tx.oncomplete=()=>resolve(result);tx.onabort=tx.onerror=()=>reject(Error('The tournament history could not be saved in this browser.'));});
+}
+let historyIndex=[],historyPending=null,historyDeleteArmed=null,historyDeleteTimer=null;
+const historyStatus=message=>{$('#history-status').textContent=message;};
+const historyDate=iso=>{const d=new Date(iso);return Number.isFinite(d.getTime())?d.toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'';};
+function renderHistory(){
+ const list=$('#history-list');if(!list)return;
+ $('#save-history').disabled=busy||storageMode==='loading'||!state.files.length;
+ list.replaceChildren(...historyIndex.map(entry=>{
+  const li=document.createElement('li'),info=document.createElement('div'),title=document.createElement('strong'),meta=document.createElement('small'),open=document.createElement('button'),remove=document.createElement('button');
+  title.textContent=entry.name||'Untitled tournament';
+  meta.textContent=[displayDate(entry.date),entry.time,entry.qualified+' qualified',entry.files+(entry.files===1?' file':' files'),'saved '+historyDate(entry.savedAt)].filter(Boolean).join(' · ');
+  info.append(title,meta);
+  open.type=remove.type='button';open.textContent='OPEN';remove.textContent=historyDeleteArmed===entry.id?'CONFIRM DELETE':'DELETE';
+  open.disabled=remove.disabled=busy;open.onclick=()=>reviewHistory(entry);remove.onclick=()=>deleteHistory(entry);
+  if(historyDeleteArmed===entry.id)remove.classList.add('danger');
+  li.append(info,open,remove);return li;}));
+ $('#history-empty').hidden=historyIndex.length>0;
+}
+async function loadHistory(){try{const index=await historyStore('get',HISTORY_INDEX_KEY);historyIndex=Array.isArray(index)?index:[];}catch{historyIndex=[];}renderHistory();}
+$('#save-history').onclick=async()=>{
+ if(busy||!state.files.length)return;
+ try{
+  const value=serializeSessionBackup(state.files,currentTournament()),backup=parseSessionBackup(value);
+  const meta=historyMeta(backup,{id:Date.now().toString(36)+Math.random().toString(36).slice(2,8)}),result=upsertHistory(historyIndex,meta);
+  await historyStore('put',historyKey(result.id),value);
+  await historyStore('put',HISTORY_INDEX_KEY,result.index);
+  for(const id of result.dropped)await historyStore('delete',historyKey(id));
+  historyIndex=result.index;renderHistory();
+  historyStatus((result.replaced?'Updated “':'Saved “')+(meta.name||'Untitled tournament')+'” in the tournament history on this device.');
+ }catch(error){historyStatus(error.message);}
+};
+async function reviewHistory(entry){
+ if(busy)return;
+ try{
+  const value=await historyStore('get',historyKey(entry.id));if(typeof value!=='string')throw Error('This saved tournament could not be found. It may have been removed in another tab.');
+  const backup=parseSessionBackup(value),summary=backupSummary(backup);historyPending={entry,backup};
+  $('#history-review-text').textContent=`Open “${entry.name||'Untitled tournament'}”: ${summary.files} ${summary.files===1?'file':'files'} · ${summary.qualified} qualified. This replaces the current ${state.files.length} ${state.files.length===1?'file':'files'} and tournament details. UNDO RESTORE (in Session backup) is available until the next file change.`;
+  $('#history-review').hidden=false;historyStatus('');
+ }catch(error){historyStatus(error.message);}
+}
+$('#cancel-history-open').onclick=()=>{historyPending=null;$('#history-review').hidden=true;historyStatus('Nothing changed.');};
+$('#confirm-history-open').onclick=async()=>{
+ if(busy||!historyPending)return;
+ // Same path as RESTORE BACKUP: commit with undo, apply the tournament details, clear filters.
+ pendingBackup=historyPending.backup;const name=historyPending.entry.name||'Untitled tournament';historyPending=null;$('#history-review').hidden=true;
+ await $('#confirm-backup-restore').onclick();
+ historyStatus(`Opened “${name}”. `+$('#backup-status').textContent);
+};
+async function deleteHistory(entry){
+ if(busy)return;
+ if(historyDeleteArmed!==entry.id){historyDeleteArmed=entry.id;clearTimeout(historyDeleteTimer);historyDeleteTimer=setTimeout(()=>{historyDeleteArmed=null;renderHistory();},6000);renderHistory();historyStatus('Press CONFIRM DELETE to remove “'+(entry.name||'Untitled tournament')+'” from this device. This cannot be undone.');return;}
+ clearTimeout(historyDeleteTimer);historyDeleteArmed=null;
+ try{const next=removeHistory(historyIndex,entry.id);await historyStore('put',HISTORY_INDEX_KEY,next);await historyStore('delete',historyKey(entry.id));historyIndex=next;renderHistory();historyStatus('Removed “'+(entry.name||'Untitled tournament')+'” from the tournament history.');}catch(error){historyStatus(error.message);}
+}
+var historyReady=true;loadHistory();

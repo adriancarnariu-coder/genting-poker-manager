@@ -151,3 +151,9 @@ button,.actions a,select,#time-picker-trigger{min-height:44px}
 .table-wrap tbody td:nth-child(5){grid-column:3;grid-row:1;font-weight:700;text-align:right}
 .table-wrap tbody td[colspan]{grid-column:1/-1;grid-row:auto;text-align:center;font-weight:400}
 }
+.history-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
+.history-list li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:10px 12px;border:1px solid #3c4043;border-radius:8px}
+.history-list li>div{flex:1 1 220px;min-width:0;display:grid;gap:2px}
+.history-list strong{overflow-wrap:anywhere}
+.history-list small{color:#9aa0a6;font-size:12px}
+.history-list button.danger{background:#cc1428;border-color:#cc1428;color:#fff}

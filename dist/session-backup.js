@@ -38,3 +38,11 @@ export function serializeSessionBackup(files,tournament){
  parseSessionBackup(value);return value;
 }
 export function backupSummary(backup){const rows=backup.files.flatMap(f=>f.records);return {files:backup.files.length,records:rows.length,qualified:rows.filter(r=>r.qualified).length};}
+// V51 tournament history: each saved tournament is a validated session backup kept in this browser.
+// The index holds only what the list needs. Saving the same name and date again replaces that entry.
+export const HISTORY_INDEX_KEY='history:index',HISTORY_LIMIT=50;
+export const historyKey=id=>'history:'+id;
+export function historyMeta(backup,{id,savedAt=new Date().toISOString()}={}){const t=backup.tournament||{},summary=backupSummary(backup);return {id,name:String(t.name||'').trim(),date:String(t.date||''),time:String(t.time||''),qualified:summary.qualified,files:summary.files,savedAt};}
+export function sameTournament(a,b){return a.name.toLocaleLowerCase()===b.name.toLocaleLowerCase()&&a.date===b.date&&a.name!=='';}
+export function upsertHistory(index,meta){const list=(Array.isArray(index)?index:[]).filter(entry=>entry&&typeof entry.id==='string');const existing=list.find(entry=>sameTournament(entry,meta));const entry={...meta,id:existing?existing.id:meta.id};const rest=list.filter(item=>item.id!==entry.id);const next=[entry,...rest].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.savedAt||'').localeCompare(a.savedAt||''));return {index:next.slice(0,HISTORY_LIMIT),replaced:!!existing,dropped:next.slice(HISTORY_LIMIT).map(item=>item.id),id:entry.id};}
+export function removeHistory(index,id){return (Array.isArray(index)?index:[]).filter(entry=>entry.id!==id);}

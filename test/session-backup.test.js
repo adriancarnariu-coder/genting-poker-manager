@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import XLSX from '../dist/vendor/xlsx.full.min.cjs';
 import {parseWorkbook,publicRows,staffRows} from '../dist/model.js';
-import {parseSessionBackup,serializeSessionBackup,backupSummary,BACKUP_EXTRA_FIELDS} from '../dist/session-backup.js';
+import {parseSessionBackup,serializeSessionBackup,backupSummary,BACKUP_EXTRA_FIELDS,historyMeta,upsertHistory,removeHistory,HISTORY_LIMIT} from '../dist/session-backup.js';
 function files(){const w=XLSX.utils.book_new();XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet([['Name','FLT','Chips','GDPR','JPOT','CTY'],['Élodie García','1 A',1380000,'NO','NO','France'],['Same Initials','1 B',150000,'YES','Y','Romania'],['Sample Identity','1 B',140000,'N','N','British']]),'Players');return [{id:'file-a',filename:'original-report.xlsx',records:parseWorkbook(XLSX,XLSX.write(w,{bookType:'xlsx',type:'buffer'}),'original-report.xlsx')}];}
 const details={name:'Deep Stack',date:'2026-12-03',time:'18:30'};
 test('backup round trip retains staff originals and identical consent-safe public output',()=>{
@@ -33,4 +33,20 @@ test('V51 backups keep places paid, big blind, prize pool, 1st place and min cas
  const old=parseSessionBackup(serializeSessionBackup([],details)).tournament;
  assert.deepEqual(old,details);for(const key of BACKUP_EXTRA_FIELDS)assert(!(key in old));
  for(const bad of [{paid:80},{minCash:'9'.repeat(41)},{bb:null}])assert.throws(()=>parseSessionBackup(serializeSessionBackup([],{...details,...bad})),/tournament .* is invalid/);
+});
+
+test('tournament history: metadata, same name and date replaces, newest date first, limit and removal',()=>{
+ const backup=parseSessionBackup(serializeSessionBackup([],{name:'BPS Main Event',date:'2026-11-24',time:'18:15'}));
+ const a=historyMeta(backup,{id:'a',savedAt:'2026-11-24T20:00:00Z'});
+ assert.deepEqual(a,{id:'a',name:'BPS Main Event',date:'2026-11-24',time:'18:15',qualified:0,files:0,savedAt:'2026-11-24T20:00:00Z'});
+ let r=upsertHistory([],a);assert.equal(r.replaced,false);assert.deepEqual(r.index.map(e=>e.id),['a']);
+ r=upsertHistory(r.index,{...a,id:'b',name:'bps main event',savedAt:'2026-11-24T22:00:00Z',qualified:40});
+ assert.equal(r.replaced,true);assert.equal(r.id,'a');assert.equal(r.index.length,1);assert.equal(r.index[0].qualified,40);
+ r=upsertHistory(r.index,{...a,id:'c',name:'Monday Redtooth',date:'2026-11-30'});
+ r=upsertHistory(r.index,{...a,id:'d',name:'Deep Stack',date:'2026-11-10'});
+ assert.deepEqual(r.index.map(e=>e.name),['Monday Redtooth','bps main event','Deep Stack']);
+ const untitled=upsertHistory(r.index,{...a,id:'e',name:''});assert.equal(untitled.replaced,false,'untitled sessions never overwrite each other');
+ let big=[];for(let i=0;i<HISTORY_LIMIT+2;i++)big=upsertHistory(big,{...a,id:'x'+i,name:'T'+i,date:'2026-01-'+String(1+(i%28)).padStart(2,'0'),savedAt:String(i)}).index;
+ assert.equal(big.length,HISTORY_LIMIT);
+ assert.deepEqual(removeHistory(r.index,'a').map(e=>e.id),['c','d']);
 });
